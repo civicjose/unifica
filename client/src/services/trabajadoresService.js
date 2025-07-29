@@ -7,11 +7,16 @@ const getConfig = (token) => ({
 });
 
 const getAllTrabajadores = async (token, filters = {}) => {
+  // --- LÓGICA DE SEPARACIÓN DE UBICACIONES ---
+  const sedes = filters.ubicaciones?.filter(u => u.startsWith('sede-')).map(u => u.replace('sede-', ''));
+  const centros = filters.ubicaciones?.filter(u => u.startsWith('centro-')).map(u => u.replace('centro-', ''));
+
   const config = {
     ...getConfig(token),
     params: {
       search: filters.search || undefined,
-      centros: filters.centros?.join(',') || undefined,
+      sedes: sedes?.join(',') || undefined,
+      centros: centros?.join(',') || undefined,
       puestos: filters.puestos?.join(',') || undefined,
     }
   };
@@ -19,12 +24,10 @@ const getAllTrabajadores = async (token, filters = {}) => {
   return response.data;
 };
 
-// --- CRUD ---
+// --- (El resto del servicio no cambia) ---
 const createTrabajador = (data, token) => axios.post(`${API_URL}/trabajadores`, data, getConfig(token));
 const updateTrabajador = (id, data, token) => axios.put(`${API_URL}/trabajadores/${id}`, data, getConfig(token));
 const deleteTrabajador = (id, token) => axios.delete(`${API_URL}/trabajadores/${id}`, getConfig(token));
-
-// --- Funciones para obtener datos para los selectores ---
 const getPuestos = (token) => axios.get(`${API_URL}/puestos`, getConfig(token));
 const getSedes = (token) => axios.get(`${API_URL}/sedes`, getConfig(token));
 const getCentros = (token) => axios.get(`${API_URL}/centros`, getConfig(token));

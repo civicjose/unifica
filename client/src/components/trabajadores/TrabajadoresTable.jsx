@@ -8,9 +8,9 @@ const SortIcon = ({ direction }) => {
 };
 
 const getInitials = (name = '') => {
-    const names = name.split(' ');
-    if (names.length === 1) return names[0].charAt(0).toUpperCase();
-    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  const names = name.split(' ');
+  if (names.length === 1) return names[0].charAt(0).toUpperCase();
+  return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
 };
 
 function TrabajadoresTable({ trabajadores, onViewDetails, onEditClick, onDeleteClick, requestSort, sortConfig }) {
@@ -30,7 +30,7 @@ function TrabajadoresTable({ trabajadores, onViewDetails, onEditClick, onDeleteC
   const handleMenuToggle = (trabajadorId) => {
     setOpenMenuId(openMenuId === trabajadorId ? null : trabajadorId);
   };
-
+  
   const SortableHeader = ({ field, label }) => (
     <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
       <button onClick={() => requestSort(field)} className="flex items-center transition-colors hover:text-slate-800">
@@ -51,7 +51,7 @@ function TrabajadoresTable({ trabajadores, onViewDetails, onEditClick, onDeleteC
           <tr>
             <SortableHeader field="apellidos" label="Nombre" />
             <SortableHeader field="puesto" label="Puesto" />
-            <SortableHeader field="centro" label="Centro" />
+            <SortableHeader field="ubicacion" label="Ubicación" />
             <SortableHeader field="estado" label="Estado" />
             <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Acciones</th>
           </tr>
@@ -71,7 +71,7 @@ function TrabajadoresTable({ trabajadores, onViewDetails, onEditClick, onDeleteC
                 </div>
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-slate-600">{trabajador.puesto || 'N/A'}</td>
-              <td className="whitespace-nowrap px-6 py-4 text-slate-600">{trabajador.centro || 'N/A'}</td>
+              <td className="whitespace-nowrap px-6 py-4 text-slate-600">{trabajador.ubicacion || 'N/A'}</td>
               <td className="whitespace-nowrap px-6 py-4">
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold leading-tight ${trabajador.estado === 'Alta' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                   {trabajador.estado}

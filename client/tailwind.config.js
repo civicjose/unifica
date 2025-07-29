@@ -14,7 +14,7 @@ export default {
         'accent-2': '#00bed6', // Cian
       },
     fontFamily: {
-        poppins: ['Poppins', 'sans-serif'],
+        sans: ['Poppins', 'sans-serif'],
       },
     },
   },

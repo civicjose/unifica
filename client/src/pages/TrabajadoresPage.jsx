@@ -14,23 +14,17 @@ import TrabajadorDetailModal from '../components/modals/TrabajadorDetailModal';
 
 import { FiSearch, FiDownload } from 'react-icons/fi';
 
-// Estos datos deberían venir de la API en el futuro
-const centrosOptions = [
-  { value: '1', label: 'Centro de Día "Amanecer"' },
-  { value: '2', label: 'Residencia "El Roble"' },
-  { value: '3', label: 'Centro Ocupacional "La Ribera"' },
-];
-const puestosOptions = [
-  { value: '1', label: 'Desarrollador/a' },
-  { value: '2', label: 'Jefe/a de Proyecto' },
-  { value: '3', label: 'Diseñador/a' },
-  { value: '4', label: 'Técnico/a de Sistemas' },
-];
-
 function TrabajadoresPage() {
   const [trabajadores, setTrabajadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
+
+  const [listOptions, setListOptions] = useState({
+    puestos: [],
+    sedes: [],
+    centros: [],
+    ubicaciones: [],
+  });
 
   // Estados para modales
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -40,7 +34,7 @@ function TrabajadoresPage() {
   const [viewingTrabajador, setViewingTrabajador] = useState(null);
 
   // Estados para filtros y ordenación
-  const [filters, setFilters] = useState({ search: '', centros: [], puestos: [] });
+  const [filters, setFilters] = useState({ search: '', ubicaciones: [], puestos: [] });
   const [sortConfig, setSortConfig] = useState({ key: 'apellidos', direction: 'ascending' });
 
   const fetchTrabajadores = useCallback(async () => {
@@ -48,25 +42,46 @@ function TrabajadoresPage() {
     setLoading(true);
     try {
       const data = await trabajadoresService.getAllTrabajadores(token, filters);
-      setTrabajadores(data);
+      if (Array.isArray(data)) {
+        setTrabajadores(data);
+      } else {
+        setTrabajadores([]);
+        toast.error("Los datos recibidos de los trabajadores no son válidos.");
+      }
     } catch (error) {
       toast.error("No se pudieron cargar los trabajadores.");
+      setTrabajadores([]);
     } finally {
       setLoading(false);
     }
   }, [token, filters]);
 
   useEffect(() => {
+    if (token) {
+        Promise.all([
+            trabajadoresService.getPuestos(token),
+            trabajadoresService.getSedes(token),
+            trabajadoresService.getCentros(token),
+        ]).then(([puestosRes, sedesRes, centrosRes]) => {
+            const sedesOptions = sedesRes.data.map(s => ({ value: `sede-${s.id}`, label: `Sede: ${s.nombre}` }));
+            const centrosOptions = centrosRes.data.map(c => ({ value: `centro-${c.id}`, label: `Centro: ${c.nombre}` }));
+
+            setListOptions({
+                puestos: puestosRes.data.map(p => ({ value: p.id, label: p.nombre })),
+                sedes: sedesRes.data.map(s => ({ value: s.id, label: s.nombre })),
+                centros: centrosRes.data.map(c => ({ value: c.id, label: c.nombre })),
+                ubicaciones: [...sedesOptions, ...centrosOptions],
+            });
+        }).catch(() => toast.error("No se pudieron cargar las listas para los filtros."));
+    }
+  }, [token]);
+
+  useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchTrabajadores();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [fetchTrabajadores, filters.search]);
-
-  useEffect(() => {
-    fetchTrabajadores();
-  }, [filters.centros, filters.puestos, token]);
-
+  }, [fetchTrabajadores]);
 
   const sortedTrabajadores = useMemo(() => {
     let sortableItems = [...trabajadores];
@@ -93,7 +108,7 @@ function TrabajadoresPage() {
   const handleFilterChange = (name, selected) => {
     setFilters(prev => ({ ...prev, [name]: selected ? selected.map(s => s.value) : [] }));
   };
-  
+
   const handleSearchChange = (e) => {
     setFilters(prev => ({ ...prev, search: e.target.value }));
   };
@@ -103,8 +118,7 @@ function TrabajadoresPage() {
       toast.error("No hay datos para exportar.");
       return;
     }
-    const dataToExport = sortedTrabajadores.map(({ id, fecha_baja, ...rest }) => rest);
-    const csv = Papa.unparse(dataToExport);
+    const csv = Papa.unparse(sortedTrabajadores);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -114,7 +128,7 @@ function TrabajadoresPage() {
     document.body.removeChild(link);
     toast.success("Datos exportados a CSV.");
   };
-  
+
   const handleEditClick = (trabajador) => { setTrabajadorToEdit(trabajador); setIsEditModalOpen(true); };
   const handleDeleteClick = (trabajador) => { setTrabajadorToDelete(trabajador); };
   const handleViewDetails = (trabajador) => { setViewingTrabajador(trabajador); };
@@ -157,8 +171,8 @@ function TrabajadoresPage() {
           <input type="text" placeholder="Buscar por nombre, apellidos, email..." className="w-full rounded-full border bg-white py-2 pl-10 pr-4" value={filters.search} onChange={handleSearchChange}/>
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
-        <MultiSelectFilter options={centrosOptions} placeholder="Filtrar por centro..." onChange={(s) => handleFilterChange('centros', s)} />
-        <MultiSelectFilter options={puestosOptions} placeholder="Filtrar por puesto..." onChange={(s) => handleFilterChange('puestos', s)} />
+        <MultiSelectFilter options={listOptions.ubicaciones} placeholder="Filtrar por ubicación..." onChange={(s) => handleFilterChange('ubicaciones', s)} />
+        <MultiSelectFilter options={listOptions.puestos} placeholder="Filtrar por puesto..." onChange={(s) => handleFilterChange('puestos', s)} />
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-lg">
@@ -174,8 +188,8 @@ function TrabajadoresPage() {
         )}
       </div>
 
-      <AddTrabajadorModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onTrabajadorAdded={handleActionCompletion} />
-      <EditTrabajadorModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onTrabajadorUpdated={handleActionCompletion} trabajador={trabajadorToEdit} />
+      <AddTrabajadorModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onTrabajadorAdded={handleActionCompletion} listas={listOptions} />
+      <EditTrabajadorModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onTrabajadorUpdated={handleActionCompletion} trabajador={trabajadorToEdit} listas={listOptions} />
       <ConfirmModal isOpen={trabajadorToDelete !== null} onClose={() => setTrabajadorToDelete(null)} onConfirm={handleConfirmDelete} title="Eliminar Trabajador">
         <p>¿Seguro que quieres eliminar a <strong>{trabajadorToDelete?.nombre} {trabajadorToDelete?.apellidos}</strong>?</p>
       </ConfirmModal>

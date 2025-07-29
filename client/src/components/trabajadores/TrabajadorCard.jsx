@@ -2,9 +2,9 @@ import React from 'react';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 const getInitials = (name = '') => {
-    const names = name.split(' ');
-    if (names.length === 1) return names[0].charAt(0).toUpperCase();
-    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  const names = name.split(' ');
+  if (names.length === 1) return names[0].charAt(0).toUpperCase();
+  return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
 };
 
 function TrabajadorCard({ trabajador, onViewDetails, onEditClick, onDeleteClick }) {
@@ -36,8 +36,8 @@ function TrabajadorCard({ trabajador, onViewDetails, onEditClick, onDeleteClick 
             <p className="text-gray-700">{trabajador.puesto || 'N/A'}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-slate-400">Centro</p>
-            <p className="text-gray-700">{trabajador.centro || 'N/A'}</p>
+            <p className="text-xs font-semibold uppercase text-slate-400">Ubicación</p>
+            <p className="text-gray-700">{trabajador.ubicacion || 'N/A'}</p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase text-slate-400">Teléfono</p>

@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import trabajadoresService from '../../services/trabajadoresService';
 import { useAuth } from '../../context/AuthContext';
 
-function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded }) {
+function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
   const [formData, setFormData] = useState({
     nombre: '',
     apellidos: '',
@@ -15,28 +15,30 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded }) {
     estado: 'Alta',
     fecha_alta: new Date().toISOString().split('T')[0],
   });
-  const [listas, setListas] = useState({ puestos: [], sedes: [], centros: [] });
   const [loading, setLoading] = useState(false);
   const { token } = useAuth();
 
-  useEffect(() => {
-    if (isOpen && token) {
-      Promise.all([
-        trabajadoresService.getPuestos(token),
-        trabajadoresService.getSedes(token),
-        trabajadoresService.getCentros(token),
-      ]).then(([puestosRes, sedesRes, centrosRes]) => {
-        setListas({
-          puestos: puestosRes.data,
-          sedes: sedesRes.data,
-          centros: centrosRes.data,
-        });
-      }).catch(() => toast.error("No se pudieron cargar las listas para los selectores."));
-    }
-  }, [isOpen, token]);
-
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // --- LÓGICA DE SELECCIÓN EXCLUSIVA ---
+    // Si se selecciona una sede, se resetea el centro.
+    if (name === 'sede_id' && value !== '') {
+      setFormData({
+        ...formData,
+        sede_id: value,
+        centro_id: '', // Resetea el otro campo
+      });
+    // Si se selecciona un centro, se resetea la sede.
+    } else if (name === 'centro_id' && value !== '') {
+      setFormData({
+        ...formData,
+        centro_id: value,
+        sede_id: '', // Resetea el otro campo
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -53,7 +55,8 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded }) {
     }
   };
 
-  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500";
+  
   if (!isOpen) return null;
 
   return (
@@ -85,21 +88,21 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded }) {
               <label className="mb-1 block text-sm font-medium text-slate-600">Puesto</label>
               <select name="puesto_id" value={formData.puesto_id} onChange={handleChange} className={inputStyle}>
                 <option value="">-- Seleccionar Puesto --</option>
-                {listas.puestos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                {listas.puestos.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">Sede (Oficina)</label>
-              <select name="sede_id" value={formData.sede_id} onChange={handleChange} className={inputStyle}>
+              <select name="sede_id" value={formData.sede_id} onChange={handleChange} className={inputStyle} disabled={!!formData.centro_id}>
                 <option value="">-- Seleccionar Sede --</option>
-                {listas.sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                {listas.sedes.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">Centro de Servicio</label>
-              <select name="centro_id" value={formData.centro_id} onChange={handleChange} className={inputStyle}>
+              <select name="centro_id" value={formData.centro_id} onChange={handleChange} className={inputStyle} disabled={!!formData.sede_id}>
                 <option value="">-- Seleccionar Centro --</option>
-                {listas.centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                {listas.centros.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
             <div>

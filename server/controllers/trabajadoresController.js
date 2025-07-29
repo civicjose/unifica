@@ -2,15 +2,15 @@
 import pool from '../config/database.js';
 
 const getAllTrabajadores = async (req, res) => {
-  const { search, centros, puestos } = req.query;
+  const { search, sedes, centros, puestos } = req.query; // Aceptamos 'sedes' y 'centros'
 
   let query = `
     SELECT 
       t.id, t.nombre, t.apellidos, t.email, t.telefono, 
       t.estado, t.fecha_alta, t.fecha_baja,
-      p.nombre_puesto as puesto,
-      s.nombre_sede as sede,
-      c.nombre_centro as centro
+      p.nombre_puesto as puesto, p.id as puesto_id,
+      COALESCE(s.nombre_sede, c.nombre_centro) AS ubicacion,
+      t.sede_id, t.centro_id
     FROM trabajadores t
     LEFT JOIN puestos p ON t.puesto_id = p.id
     LEFT JOIN sedes s ON t.sede_id = s.id
@@ -25,11 +25,22 @@ const getAllTrabajadores = async (req, res) => {
     const searchTerm = `%${search}%`;
     queryParams.push(searchTerm, searchTerm, searchTerm);
   }
-  if (centros) {
-    const centrosIds = centros.split(',').map(id => parseInt(id, 10));
+  
+  // --- LÓGICA DE FILTRO DE UBICACIÓN CORREGIDA ---
+  const sedeIds = sedes ? sedes.split(',').map(id => parseInt(id, 10)) : [];
+  const centroIds = centros ? centros.split(',').map(id => parseInt(id, 10)) : [];
+  
+  if (sedeIds.length > 0 && centroIds.length > 0) {
+    whereClauses.push(`(t.sede_id IN (?) OR t.centro_id IN (?))`);
+    queryParams.push(sedeIds, centroIds);
+  } else if (sedeIds.length > 0) {
+    whereClauses.push(`t.sede_id IN (?)`);
+    queryParams.push(sedeIds);
+  } else if (centroIds.length > 0) {
     whereClauses.push(`t.centro_id IN (?)`);
-    queryParams.push(centrosIds);
+    queryParams.push(centroIds);
   }
+
   if (puestos) {
     const puestosIds = puestos.split(',').map(id => parseInt(id, 10));
     whereClauses.push(`t.puesto_id IN (?)`);
