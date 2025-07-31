@@ -1,0 +1,58 @@
+# =============================================================================
+# Archivos de Dependencias
+# Se deben ignorar para cada subproyecto (cliente y servidor).
+# =============================================================================
+/node_modules/
+/client/node_modules/
+/server/node_modules/
+
+# =============================================================================
+# Archivos de Build y Producción
+# Estos archivos se generan automáticamente al compilar el frontend.
+# =============================================================================
+/client/dist/
+/client/dist-ssr/
+/client/.vite/
+/client/coverage/
+
+# =============================================================================
+# Archivos de Entorno
+# Contienen claves de API, contraseñas y otra información sensible.
+# NUNCA los subas a un repositorio.
+# =============================================================================
+.env
+.env.*
+*.local
+
+# =============================================================================
+# Logs de Errores y Diagnóstico
+# Generados por gestores de paquetes o por la propia aplicación.
+# =============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =============================================================================
+# Archivos de Sistema Operativo
+# Archivos temporales generados por macOS y Windows.
+# =============================================================================
+.DS_Store
+Thumbs.db
+
+# =============================================================================
+# Archivos de Configuración de Editores de Código
+# Para mantener las preferencias personales fuera del repositorio.
+# =============================================================================
+.idea/
+.vscode/*
+# Excepción: permite compartir la configuración de extensiones recomendadas.
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
