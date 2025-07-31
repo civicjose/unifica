@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-//const AUTH_API_URL = 'http://localhost:4000/api/auth';
-//const USERS_API_URL = 'http://localhost:4000/api/users';
-const AUTH_API_URL = '/api/auth';
-const USERS_API_URL = '/api/users';
+const AUTH_API_URL = 'http://localhost:4000/api/auth';
+const USERS_API_URL = 'http://localhost:4000/api/users';
 
 /**
  * Llama al endpoint para registrar un nuevo usuario.
