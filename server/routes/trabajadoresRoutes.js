@@ -1,21 +1,21 @@
-// server/routes/trabajadoresRoutes.js
 import express from 'express';
+import multer from 'multer'; // Importamos multer
 import {
-  getAllTrabajadores,
-  createTrabajador,
-  updateTrabajador,
-  deleteTrabajador
+  getAllTrabajadores, createTrabajador, updateTrabajador, deleteTrabajador, importTrabajadores
 } from '../controllers/trabajadoresController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() }); // Configuración para recibir el archivo en memoria
 
-// Todas las rutas de trabajadores estarán protegidas, requieren login
 router.use(protect);
 
 router.route('/')
   .get(getAllTrabajadores)
   .post(createTrabajador);
+
+// --- NUEVA RUTA PARA LA IMPORTACIÓN ---
+router.post('/import', upload.single('file'), importTrabajadores);
 
 router.route('/:id')
   .put(updateTrabajador)

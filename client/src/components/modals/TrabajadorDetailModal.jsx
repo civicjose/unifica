@@ -1,5 +1,6 @@
 import React from 'react';
-import { FiX, FiMail, FiPhone, FiBriefcase, FiMapPin, FiCheckCircle, FiXCircle, FiCalendar } from 'react-icons/fi';
+// He reemplazado FiBuilding por FiArchive aquí y he quitado FiBriefcase que no se usaba
+import { FiX, FiMail, FiPhone, FiArchive, FiMapPin, FiCheckCircle, FiXCircle, FiCalendar, FiFileText } from 'react-icons/fi';
 
 const getInitials = (name = '') => {
   if (!name) return '';
@@ -8,13 +9,22 @@ const getInitials = (name = '') => {
   return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
 };
 
+const formatDate = (dateString) => {
+  if (!dateString) return null;
+  const [year, month, day] = dateString.split('T')[0].split('-');
+  return `${day}-${month}-${year}`;
+};
+
 function TrabajadorDetailModal({ isOpen, onClose, trabajador }) {
   if (!isOpen) return null;
 
-  const DetailItem = ({ icon, label, value }) => (
+  const DetailItem = ({ icon, label, value, children }) => (
     <div>
       <p className="text-xs font-semibold uppercase text-slate-400">{label}</p>
-      <p className="mt-1 flex items-center text-slate-700">{icon}{value || 'No especificado'}</p>
+      <div className="mt-1 flex items-center text-slate-700">
+        {icon}
+        {children || value || 'No especificado'}
+      </div>
     </div>
   );
 
@@ -40,17 +50,31 @@ function TrabajadorDetailModal({ isOpen, onClose, trabajador }) {
           <div className="mt-6 grid grid-cols-1 gap-6 border-t border-slate-200 pt-6 sm:grid-cols-2">
             <DetailItem icon={<FiMail className="mr-2" />} label="Email" value={trabajador.email} />
             <DetailItem icon={<FiPhone className="mr-2" />} label="Teléfono" value={trabajador.telefono} />
-            <DetailItem icon={<FiBriefcase className="mr-2" />} label="Centro de Servicio" value={trabajador.centro} />
-            <DetailItem icon={<FiMapPin className="mr-2" />} label="Sede (Oficina)" value={trabajador.sede} />
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-400">Estado</p>
-              <p className={`mt-1 flex items-center font-bold ${trabajador.estado === 'Alta' ? 'text-green-600' : 'text-red-600'}`}>
-                {trabajador.estado === 'Alta' ? <FiCheckCircle className="mr-2"/> : <FiXCircle className="mr-2"/>}
-                {trabajador.estado}
-              </p>
+            <DetailItem icon={<FiMapPin className="mr-2" />} label="Ubicación" value={trabajador.ubicacion} />
+            
+            {/* --- CORRECCIÓN AQUÍ: Usamos el icono FiArchive --- */}
+            {trabajador.departamento && (
+              <DetailItem icon={<FiArchive className="mr-2" />} label="Departamento" value={trabajador.departamento} />
+            )}
+
+            <div className={trabajador.departamento ? '' : 'sm:col-span-2'}>
+              <DetailItem label="Estado">
+                  <p className={`flex items-center font-bold ${trabajador.estado === 'Alta' ? 'text-green-600' : 'text-red-600'}`}>
+                      {trabajador.estado === 'Alta' ? <FiCheckCircle className="mr-2"/> : <FiXCircle className="mr-2"/>}
+                      {trabajador.estado}
+                      {trabajador.fecha_baja && <span className="ml-2 text-sm font-normal text-slate-500">({formatDate(trabajador.fecha_baja)})</span>}
+                  </p>
+              </DetailItem>
             </div>
-            <DetailItem icon={<FiCalendar className="mr-2" />} label="Fecha de Alta" value={trabajador.fecha_alta?.split('T')[0]} />
-            {trabajador.fecha_baja && <DetailItem icon={<FiCalendar className="mr-2" />} label="Fecha de Baja" value={trabajador.fecha_baja?.split('T')[0]} />}
+            <DetailItem icon={<FiCalendar className="mr-2" />} label="Fecha de Alta" value={formatDate(trabajador.fecha_alta)} />
+            
+            {trabajador.observaciones && (
+              <div className="sm:col-span-2">
+                <DetailItem icon={<FiFileText className="mr-2 mt-1 self-start flex-shrink-0" />} label="Observaciones">
+                    <p className="whitespace-pre-wrap text-slate-700">{trabajador.observaciones}</p>
+                </DetailItem>
+              </div>
+            )}
           </div>
         </div>
       </div>

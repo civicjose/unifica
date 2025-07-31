@@ -1,5 +1,4 @@
 // server/index.js
-
 import 'dotenv/config.js';
 import express from 'express';
 import cors from 'cors';
@@ -9,6 +8,9 @@ import trabajadoresRoutes from './routes/trabajadoresRoutes.js';
 import puestosRoutes from './routes/puestosRoutes.js';
 import sedesRoutes from './routes/sedesRoutes.js';
 import centrosRoutes from './routes/centrosRoutes.js';
+import territoriosRoutes from './routes/territoriosRoutes.js';
+import departamentosRoutes from './routes/departamentosRoutes.js';
+import tipoCentroRoutes from './routes/tipoCentroRoutes.js';
 
 const app = express();
 
@@ -23,6 +25,9 @@ app.use('/api/trabajadores', trabajadoresRoutes);
 app.use('/api/puestos', puestosRoutes);
 app.use('/api/sedes', sedesRoutes);
 app.use('/api/centros', centrosRoutes);
+app.use('/api/territorios', territoriosRoutes);
+app.use('/api/departamentos', departamentosRoutes);
+app.use('/api/tipos-centro', tipoCentroRoutes);
 
 // Ruta de prueba
 app.get('/api', (req, res) => {

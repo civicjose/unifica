@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import trabajadoresService from '../../services/trabajadoresService';
 import { useAuth } from '../../context/AuthContext';
@@ -12,33 +12,23 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
     puesto_id: '',
     sede_id: '',
     centro_id: '',
+    departamento_id: '',
     estado: 'Alta',
     fecha_alta: new Date().toISOString().split('T')[0],
+    observaciones: '',
   });
   const [loading, setLoading] = useState(false);
   const { token } = useAuth();
+  const [lugarTrabajoTipo, setLugarTrabajoTipo] = useState('');
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    // --- LÓGICA DE SELECCIÓN EXCLUSIVA ---
-    // Si se selecciona una sede, se resetea el centro.
-    if (name === 'sede_id' && value !== '') {
-      setFormData({
-        ...formData,
-        sede_id: value,
-        centro_id: '', // Resetea el otro campo
-      });
-    // Si se selecciona un centro, se resetea la sede.
-    } else if (name === 'centro_id' && value !== '') {
-      setFormData({
-        ...formData,
-        centro_id: value,
-        sede_id: '', // Resetea el otro campo
-      });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleLugarTipoChange = (e) => {
+    const tipo = e.target.value;
+    setLugarTrabajoTipo(tipo);
+    setFormData({ ...formData, sede_id: '', centro_id: '', departamento_id: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -55,8 +45,8 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
     }
   };
 
-  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500";
-  
+  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+
   if (!isOpen) return null;
 
   return (
@@ -92,19 +82,42 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Sede (Oficina)</label>
-              <select name="sede_id" value={formData.sede_id} onChange={handleChange} className={inputStyle} disabled={!!formData.centro_id}>
-                <option value="">-- Seleccionar Sede --</option>
-                {listas.sedes.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              <label className="mb-1 block text-sm font-medium text-slate-600">Tipo de Ubicación</label>
+              <select name="lugar_trabajo_tipo" value={lugarTrabajoTipo} onChange={handleLugarTipoChange} className={inputStyle}>
+                <option value="">-- Seleccionar Tipo --</option>
+                <option value="sede">Sede</option>
+                <option value="centro">Centro</option>
               </select>
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Centro de Servicio</label>
-              <select name="centro_id" value={formData.centro_id} onChange={handleChange} className={inputStyle} disabled={!!formData.sede_id}>
-                <option value="">-- Seleccionar Centro --</option>
-                {listas.centros.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-            </div>
+
+            {lugarTrabajoTipo === 'sede' && (
+              <>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-600">Sede (Oficina)</label>
+                  <select name="sede_id" value={formData.sede_id} onChange={handleChange} className={inputStyle}>
+                    <option value="">-- Seleccionar Sede --</option>
+                    {listas.sedes.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-600">Departamento</label>
+                  <select name="departamento_id" value={formData.departamento_id} onChange={handleChange} className={inputStyle}>
+                    <option value="">-- Seleccionar Departamento --</option>
+                    {listas.departamentos.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
+            {lugarTrabajoTipo === 'centro' && (
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-slate-600">Centro de Servicio</label>
+                <select name="centro_id" value={formData.centro_id} onChange={handleChange} className={inputStyle}>
+                  <option value="">-- Seleccionar Centro --</option>
+                  {listas.centros.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+            )}
+            
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">Estado</label>
               <select name="estado" value={formData.estado} onChange={handleChange} className={inputStyle}>
@@ -112,9 +125,13 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
                 <option value="Baja">Baja</option>
               </select>
             </div>
-            <div className="md:col-span-2">
+            <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">Fecha de Alta</label>
               <input type="date" name="fecha_alta" value={formData.fecha_alta} onChange={handleChange} className={inputStyle} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-slate-600">Observaciones</label>
+              <textarea name="observaciones" value={formData.observaciones} onChange={handleChange} className={inputStyle} rows="3"></textarea>
             </div>
           </div>
           <div className="flex justify-end gap-4 border-t border-slate-200 pt-4 mt-6">
