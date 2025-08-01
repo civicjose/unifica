@@ -1,21 +1,46 @@
-// server/index.js de PRUEBA
+// server/index.js
+import 'dotenv/config.js';
 import express from 'express';
 import cors from 'cors';
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import trabajadoresRoutes from './routes/trabajadoresRoutes.js';
+import puestosRoutes from './routes/puestosRoutes.js';
+import sedesRoutes from './routes/sedesRoutes.js';
+import centrosRoutes from './routes/centrosRoutes.js';
+import territoriosRoutes from './routes/territoriosRoutes.js';
+import departamentosRoutes from './routes/departamentosRoutes.js';
+import tipoCentroRoutes from './routes/tipoCentroRoutes.js';
 
 const app = express();
 
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Creamos una ruta de login falsa que siempre funciona
-app.post('/api/auth/login', (req, res) => {
-  console.log("¡La petición de login LLEGÓ al servidor de prueba!");
-  res.json({ message: 'Login de prueba exitoso', token: 'token_de_prueba_123' });
-});
+// Rutas de la API
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/trabajadores', trabajadoresRoutes);
+app.use('/api/puestos', puestosRoutes);
+app.use('/api/sedes', sedesRoutes);
+app.use('/api/centros', centrosRoutes);
+app.use('/api/territorios', territoriosRoutes);
+app.use('/api/departamentos', departamentosRoutes);
+app.use('/api/tipos-centro', tipoCentroRoutes);
 
-// Una ruta de prueba para ver si la API responde
+// Ruta de prueba
 app.get('/api', (req, res) => {
-  res.json({ message: '¡La API de PRUEBA está funcionando!' });
+  res.json({ message: '¡API funcionando!' });
 });
 
+// 1. ELIMINA ESTAS LÍNEAS
+/*
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
+});
+*/
+
+// 2. AÑADE ESTA LÍNEA AL FINAL
 export default app;
