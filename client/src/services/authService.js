@@ -2,8 +2,8 @@
 import axios from 'axios';
 
 // La URL base de tu API en el backend
-//const API_URL = 'http://localhost:4000/api/auth';
-const API_URL = '/api/auth';
+const API_URL = 'http://localhost:4000/api/auth';
+//const API_URL = '/api/auth';
 
 
 /**
