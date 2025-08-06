@@ -1,7 +1,7 @@
-import pool from '../config/database.js';
-export const getAllPuestos = async (req, res) => {
-  try {
-    const [puestos] = await pool.query('SELECT id, nombre_puesto as nombre FROM puestos ORDER BY nombre_puesto');
-    res.json(puestos);
-  } catch (error) { res.status(500).json({ message: 'Error del servidor.' }); }
-};
+import { getAll, create, update, remove } from './genericController.js';
+
+// Usamos la fábrica para crear y exportar los controladores para la tabla 'puestos'
+export const getAllPuestos = getAll('puestos', 'nombre_puesto', 'nombre_puesto');
+export const createPuesto = create('puestos', 'nombre_puesto');
+export const updatePuesto = update('puestos', 'nombre_puesto');
+export const deletePuesto = remove('puestos');

@@ -42,9 +42,16 @@ function TrabajadoresPage() {
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
 
-  const [modalListOptions, setModalListOptions] = useState({ puestos: [], sedes: [], centros: [], departamentos: [] });
+  // Se inicializa 'territorios' como un array vacío para evitar errores
+  const [modalListOptions, setModalListOptions] = useState({ 
+    puestos: [], 
+    sedes: [], 
+    centros: [], 
+    departamentos: [], 
+    territorios: [] 
+  });
+  
   const [filterOptions, setFilterOptions] = useState({ ubicaciones: [], puestos: [] });
-
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -60,27 +67,31 @@ function TrabajadoresPage() {
   });
   const [sortConfig, setSortConfig] = useState({ key: 'apellidos', direction: 'ascending' });
 
-  // Carga todos los datos maestros una vez
+  // Carga todos los datos maestros y de trabajadores una sola vez.
   const fetchAllData = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const [trabajadoresRes, puestosRes, sedesRes, centrosRes, deptosRes] = await Promise.all([
+      // Se cargan los territorios junto con las demás listas
+      const [trabajadoresRes, puestosRes, sedesRes, centrosRes, deptosRes, territoriosRes] = await Promise.all([
         trabajadoresService.getAllTrabajadores(token),
         trabajadoresService.getPuestos(token),
         trabajadoresService.getSedes(token),
         trabajadoresService.getCentros(token),
         trabajadoresService.getDepartamentos(token),
+        trabajadoresService.getTerritorios(token),
       ]);
 
       const trabajadoresData = Array.isArray(trabajadoresRes) ? trabajadoresRes : [];
       setAllTrabajadores(trabajadoresData);
 
+      // Se construye el objeto de listas para los modales, usando 'codigo' para la etiqueta de territorios
       setModalListOptions({
         puestos: puestosRes.data.map(p => ({ value: p.id, label: p.nombre })),
         sedes: sedesRes.data.map(s => ({ value: s.id, label: s.nombre })),
         centros: centrosRes.data.map(c => ({ value: c.id, label: c.nombre })),
         departamentos: deptosRes.data.map(d => ({ value: d.id, label: d.nombre })),
+        territorios: territoriosRes.data.map(t => ({ value: t.id, label: t.codigo })),
       });
 
       const puestosUnicos = new Map(trabajadoresData.filter(t => t.puesto_id).map(t => [t.puesto_id, { value: t.puesto_id, label: t.puesto }]));
@@ -96,7 +107,7 @@ function TrabajadoresPage() {
       });
 
     } catch (error) {
-      toast.error("No se pudieron cargar los datos.");
+      toast.error("No se pudieron cargar los datos iniciales.");
     } finally {
       setLoading(false);
     }
@@ -106,10 +117,14 @@ function TrabajadoresPage() {
     fetchAllData();
   }, [fetchAllData]);
 
+  // Lógica de filtrado y ordenación que se ejecuta en el cliente (frontend)
   const filteredAndSortedTrabajadores = useMemo(() => {
     let items = [...allTrabajadores];
 
-    if (filters.estado !== 'Todos') items = items.filter(t => t.estado === filters.estado);
+    if (filters.estado !== 'Todos') {
+      items = items.filter(t => t.estado === filters.estado);
+    }
+    
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       items = items.filter(t =>
@@ -120,7 +135,11 @@ function TrabajadoresPage() {
         (t.ubicacion && t.ubicacion.toLowerCase().includes(searchLower))
       );
     }
-    if (filters.puestos.length > 0) items = items.filter(t => filters.puestos.includes(t.puesto_id));
+
+    if (filters.puestos.length > 0) {
+      items = items.filter(t => filters.puestos.includes(t.puesto_id));
+    }
+
     if (filters.ubicaciones.length > 0) {
       items = items.filter(t => 
         (t.sede_id && filters.ubicaciones.includes(`sede-${t.sede_id}`)) ||

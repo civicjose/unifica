@@ -11,6 +11,8 @@ import centrosRoutes from './routes/centrosRoutes.js';
 import territoriosRoutes from './routes/territoriosRoutes.js';
 import departamentosRoutes from './routes/departamentosRoutes.js';
 import tipoCentroRoutes from './routes/tipoCentroRoutes.js';
+import glpiRoutes from './routes/glpiRoutes.js';
+import historialRoutes from './routes/historialRoutes.js';
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use('/api/centros', centrosRoutes);
 app.use('/api/territorios', territoriosRoutes);
 app.use('/api/departamentos', departamentosRoutes);
 app.use('/api/tipos-centro', tipoCentroRoutes);
+app.use('/api/glpi', glpiRoutes);
+app.use('/api/historial', historialRoutes);
 
 
 const PORT = process.env.PORT || 4000;

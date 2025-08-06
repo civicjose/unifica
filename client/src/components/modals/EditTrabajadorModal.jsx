@@ -3,11 +3,15 @@ import toast from 'react-hot-toast';
 import trabajadoresService from '../../services/trabajadoresService';
 import { useAuth } from '../../context/AuthContext';
 
+const PUESTOS_CON_TERRITORIO = [9, 10, 11];
+
 function EditTrabajadorModal({ isOpen, onClose, onTrabajadorUpdated, trabajador, listas }) {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const { token } = useAuth();
   const [lugarTrabajoTipo, setLugarTrabajoTipo] = useState('');
+
+  const showTerritorioField = PUESTOS_CON_TERRITORIO.includes(Number(formData.puesto_id));
 
   useEffect(() => {
     if (trabajador) {
@@ -17,12 +21,13 @@ function EditTrabajadorModal({ isOpen, onClose, onTrabajadorUpdated, trabajador,
         email: trabajador.email || '',
         telefono: trabajador.telefono || '',
         puesto_id: trabajador.puesto_id || '',
+        territorio_id: trabajador.territorio_id || '',
         sede_id: trabajador.sede_id || '',
         centro_id: trabajador.centro_id || '',
         departamento_id: trabajador.departamento_id || '',
         estado: trabajador.estado || 'Alta',
-        fecha_alta: trabajador.fecha_alta?.split('T')[0] || '',
-        fecha_baja: trabajador.fecha_baja?.split('T')[0] || null,
+        fecha_alta: trabajador.fecha_alta || '', // Se asigna directamente el string 'YYYY-MM-DD'
+        fecha_baja: trabajador.fecha_baja || null, // Se asigna directamente el string 'YYYY-MM-DD' o null
         observaciones: trabajador.observaciones || '',
       });
 
@@ -38,12 +43,17 @@ function EditTrabajadorModal({ isOpen, onClose, onTrabajadorUpdated, trabajador,
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    let newFormData = { ...formData, [name]: value };
+
     if (name === 'fecha_baja') {
-      const nuevoEstado = value ? 'Baja' : 'Alta';
-      setFormData({ ...formData, fecha_baja: value, estado: nuevoEstado });
-    } else {
-      setFormData({ ...formData, [name]: value });
+      newFormData.estado = value ? 'Baja' : 'Alta';
     }
+
+    if (name === 'puesto_id' && !PUESTOS_CON_TERRITORIO.includes(Number(value))) {
+      newFormData.territorio_id = '';
+    }
+    
+    setFormData(newFormData);
   };
   
   const handleLugarTipoChange = (e) => {
@@ -100,9 +110,20 @@ function EditTrabajadorModal({ isOpen, onClose, onTrabajadorUpdated, trabajador,
               <label className="mb-1 block text-sm font-medium text-slate-600">Puesto</label>
               <select name="puesto_id" value={formData.puesto_id || ''} onChange={handleChange} className={inputStyle}>
                   <option value="">-- Seleccionar Puesto --</option>
-                  {listas.puestos.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                  {listas.puestos?.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
+
+            {showTerritorioField && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Territorio (DT)</label>
+                <select name="territorio_id" value={formData.territorio_id || ''} onChange={handleChange} className={inputStyle}>
+                  <option value="">-- Seleccionar Territorio --</option>
+                  {listas.territorios?.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">Tipo de Ubicación</label>
               <select name="lugar_trabajo_tipo" value={lugarTrabajoTipo} onChange={handleLugarTipoChange} className={inputStyle}>
@@ -118,14 +139,14 @@ function EditTrabajadorModal({ isOpen, onClose, onTrabajadorUpdated, trabajador,
                   <label className="mb-1 block text-sm font-medium text-slate-600">Sede (Oficina)</label>
                   <select name="sede_id" value={formData.sede_id || ''} onChange={handleChange} className={inputStyle}>
                     <option value="">-- Seleccionar Sede --</option>
-                    {listas.sedes.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    {listas.sedes?.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-600">Departamento</label>
                   <select name="departamento_id" value={formData.departamento_id || ''} onChange={handleChange} className={inputStyle}>
                     <option value="">-- Seleccionar Departamento --</option>
-                    {listas.departamentos.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                    {listas.departamentos?.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                   </select>
                 </div>
               </>
@@ -135,7 +156,7 @@ function EditTrabajadorModal({ isOpen, onClose, onTrabajadorUpdated, trabajador,
                 <label className="mb-1 block text-sm font-medium text-slate-600">Centro de Servicio</label>
                 <select name="centro_id" value={formData.centro_id || ''} onChange={handleChange} className={inputStyle}>
                   <option value="">-- Seleccionar Centro --</option>
-                  {listas.centros.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  {listas.centros?.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
             )}

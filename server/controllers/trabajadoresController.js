@@ -1,41 +1,52 @@
 import pool from '../config/database.js';
 import Papa from 'papaparse';
 
-// --- (El resto de funciones: getAll, create, update, delete no cambian) ---
+// Se elimina la función normalizeDate, ya no es necesaria.
+
 const getAllTrabajadores = async (req, res) => {
-  const { search, sedes, centros, puestos, estado } = req.query;
+  const { search, sedes, centros, puestos, estado, territorios } = req.query;
+  // 1. Usamos DATE_FORMAT() en la consulta SQL para obtener las fechas como texto
   let query = `
     SELECT 
       t.id, t.nombre, t.apellidos, t.email, t.telefono, 
-      t.estado, t.fecha_alta, t.fecha_baja, t.observaciones,
+      t.estado, 
+      DATE_FORMAT(t.fecha_alta, '%Y-%m-%d') as fecha_alta, 
+      DATE_FORMAT(t.fecha_baja, '%Y-%m-%d') as fecha_baja, 
+      t.observaciones,
       p.nombre_puesto as puesto, p.id as puesto_id,
       COALESCE(s.nombre_sede, c.nombre_centro) AS ubicacion,
       t.sede_id, t.centro_id,
-      d.nombre as departamento, t.departamento_id
+      d.nombre as departamento, t.departamento_id,
+      ter.codigo as territorio,
+      t.territorio_id
     FROM trabajadores t
     LEFT JOIN puestos p ON t.puesto_id = p.id
     LEFT JOIN sedes s ON t.sede_id = s.id
     LEFT JOIN centros c ON t.centro_id = c.id
     LEFT JOIN departamentos d ON t.departamento_id = d.id
+    LEFT JOIN territorios ter ON t.territorio_id = ter.id
   `;
+  // ... (el resto de la lógica de filtros no cambia)
   const whereClauses = [];
   const queryParams = [];
   if (search) {
-    whereClauses.push(`(t.nombre LIKE ? OR t.apellidos LIKE ? OR t.email LIKE ? OR p.nombre_puesto LIKE ? OR s.nombre_sede LIKE ? OR c.nombre_centro LIKE ?)`);
+    whereClauses.push(`(t.nombre LIKE ? OR t.apellidos LIKE ? OR t.email LIKE ? OR p.nombre_puesto LIKE ? OR COALESCE(s.nombre_sede, c.nombre_centro) LIKE ? OR ter.codigo LIKE ?)`);
     const searchTerm = `%${search}%`;
     queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
   }
   const sedeIds = sedes ? sedes.split(',').map(id => parseInt(id, 10)) : [];
   const centroIds = centros ? centros.split(',').map(id => parseInt(id, 10)) : [];
-  if (sedeIds.length > 0 && centroIds.length > 0) {
-    whereClauses.push(`(t.sede_id IN (?) OR t.centro_id IN (?))`);
-    queryParams.push(sedeIds, centroIds);
-  } else if (sedeIds.length > 0) {
-    whereClauses.push(`t.sede_id IN (?)`);
-    queryParams.push(sedeIds);
-  } else if (centroIds.length > 0) {
-    whereClauses.push(`t.centro_id IN (?)`);
-    queryParams.push(centroIds);
+  if (sedeIds.length > 0 || centroIds.length > 0) {
+    const ubicacionClauses = [];
+    if (sedeIds.length > 0) {
+      ubicacionClauses.push(`t.sede_id IN (?)`);
+      queryParams.push(sedeIds);
+    }
+    if (centroIds.length > 0) {
+      ubicacionClauses.push(`t.centro_id IN (?)`);
+      queryParams.push(centroIds);
+    }
+    whereClauses.push(`(${ubicacionClauses.join(' OR ')})`);
   }
   if (puestos) {
     const puestosIds = puestos.split(',').map(id => parseInt(id, 10));
@@ -45,6 +56,11 @@ const getAllTrabajadores = async (req, res) => {
   if (estado && (estado === 'Alta' || estado === 'Baja')) {
     whereClauses.push(`t.estado = ?`);
     queryParams.push(estado);
+  }
+  if (territorios) {
+    const territorioIds = territorios.split(',').map(id => parseInt(id, 10));
+    whereClauses.push(`t.territorio_id IN (?)`);
+    queryParams.push(territorioIds);
   }
   if (whereClauses.length > 0) {
     query += ` WHERE ${whereClauses.join(' AND ')}`;
@@ -58,45 +74,114 @@ const getAllTrabajadores = async (req, res) => {
     res.status(500).json({ message: 'Error del servidor al obtener trabajadores.' });
   }
 };
+
 const createTrabajador = async (req, res) => {
-  const { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, estado, fecha_alta, observaciones } = req.body;
-  if (sede_id && centro_id) {
+  const datosNuevos = req.body;
+  const usuarioId = req.user.id;
+
+  if (datosNuevos.sede_id && datosNuevos.centro_id) {
     return res.status(400).json({ message: 'Un trabajador solo puede pertenecer a una sede O a un centro, no a ambos.' });
   }
-  if (!nombre || !apellidos) {
+  if (!datosNuevos.nombre || !datosNuevos.apellidos) {
     return res.status(400).json({ message: 'El nombre y los apellidos son obligatorios.' });
   }
+
+  const conn = await pool.getConnection();
+
   try {
-    const [result] = await pool.query(
-      'INSERT INTO trabajadores (nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, estado, fecha_alta, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [nombre, apellidos, email, telefono, puesto_id || null, sede_id || null, centro_id || null, departamento_id || null, estado, fecha_alta || null, observaciones]
+    await conn.beginTransaction();
+    
+    const { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, territorio_id, estado, fecha_alta, observaciones } = datosNuevos;
+
+    const [result] = await conn.query(
+      'INSERT INTO trabajadores (nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, territorio_id, estado, fecha_alta, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [nombre, apellidos, email, telefono, puesto_id || null, sede_id || null, centro_id || null, departamento_id || null, territorio_id || null, estado, fecha_alta || null, observaciones]
     );
-    res.status(201).json({ id: result.insertId, message: 'Trabajador creado con éxito.' });
+    const nuevoTrabajadorId = result.insertId;
+
+    for (const campo in datosNuevos) {
+        const valorNuevo = datosNuevos[campo] ?? null;
+        if (valorNuevo !== null && valorNuevo !== '') {
+            await conn.query(
+              'INSERT INTO historial_modificaciones (usuario_modificador_id, tipo_accion, entidad_modificada, id_entidad_modificada, campo_modificado, valor_anterior, valor_nuevo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+              [usuarioId, 'CREATE', 'trabajadores', nuevoTrabajadorId, campo, null, valorNuevo]
+            );
+        }
+    }
+
+    await conn.commit();
+    res.status(201).json({ id: nuevoTrabajadorId, message: 'Trabajador creado con éxito.' });
+
   } catch (error) {
+    await conn.rollback();
     console.error(error);
     res.status(500).json({ message: 'Error del servidor al crear el trabajador.' });
+  } finally {
+    conn.release();
   }
 };
+
+
 const updateTrabajador = async (req, res) => {
   const { id } = req.params;
-  let { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, estado, fecha_alta, fecha_baja, observaciones } = req.body;
-  if (sede_id && centro_id) {
-    return res.status(400).json({ message: 'Un trabajador solo puede pertenecer a una sede O a un centro, no a ambos.' });
-  }
-  if (fecha_baja === '') fecha_baja = null;
-  if (fecha_alta === '') fecha_alta = null;
+  const datosNuevos = req.body;
+  const usuarioId = req.user.id;
+  const conn = await pool.getConnection();
+
   try {
-    const [result] = await pool.query(
-      'UPDATE trabajadores SET nombre = ?, apellidos = ?, email = ?, telefono = ?, puesto_id = ?, sede_id = ?, centro_id = ?, departamento_id = ?, estado = ?, fecha_alta = ?, fecha_baja = ?, observaciones = ? WHERE id = ?',
-      [nombre, apellidos, email, telefono, puesto_id || null, sede_id || null, centro_id || null, departamento_id || null, estado, fecha_alta, fecha_baja, observaciones, id]
+    await conn.beginTransaction();
+
+    // 2. Obtenemos los datos formateados directamente desde la BD
+    const [trabajadoresActuales] = await conn.query(
+      "SELECT id, nombre, apellidos, email, telefono, estado, DATE_FORMAT(fecha_alta, '%Y-%m-%d') as fecha_alta, DATE_FORMAT(fecha_baja, '%Y-%m-%d') as fecha_baja, observaciones, puesto_id, sede_id, centro_id, departamento_id, territorio_id FROM trabajadores WHERE id = ?", [id]
     );
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Trabajador no encontrado.' });
+
+    if (trabajadoresActuales.length === 0) {
+      await conn.rollback(); conn.release();
+      return res.status(404).json({ message: 'Trabajador no encontrado.' });
+    }
+    const datosAnteriores = trabajadoresActuales[0];
+
+    // ... (actualización de datos)
+    const { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, territorio_id, estado, fecha_alta, fecha_baja, observaciones } = datosNuevos;
+    
+    await conn.query(
+      'UPDATE trabajadores SET nombre = ?, apellidos = ?, email = ?, telefono = ?, puesto_id = ?, sede_id = ?, centro_id = ?, departamento_id = ?, territorio_id = ?, estado = ?, fecha_alta = ?, fecha_baja = ?, observaciones = ? WHERE id = ?',
+      [nombre, apellidos, email, telefono, puesto_id || null, sede_id || null, centro_id || null, departamento_id || null, territorio_id || null, estado, fecha_alta || null, fecha_baja || null, observaciones, id]
+    );
+
+    for (const campo in datosNuevos) {
+      if (datosNuevos.sede_id && campo === 'centro_id') continue;
+      if (datosNuevos.centro_id && (campo === 'sede_id' || campo === 'departamento_id')) continue;
+
+      // 3. Ahora la comparación es directa entre strings 'YYYY-MM-DD'
+      const valorAnterior = datosAnteriores[campo] ?? null;
+      const valorNuevo = datosNuevos[campo] ?? null;
+      
+      if (String(valorAnterior) !== String(valorNuevo)) {
+        if ((valorAnterior === null || valorAnterior === '') && (valorNuevo === null || valorNuevo === '')) {
+            continue;
+        }
+
+        await conn.query(
+          'INSERT INTO historial_modificaciones (usuario_modificador_id, tipo_accion, entidad_modificada, id_entidad_modificada, campo_modificado, valor_anterior, valor_nuevo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [usuarioId, 'UPDATE', 'trabajadores', id, campo, valorAnterior, valorNuevo]
+        );
+      }
+    }
+
+    await conn.commit();
     res.json({ message: 'Trabajador actualizado con éxito.' });
+
   } catch (error) {
+    await conn.rollback();
     console.error(error);
     res.status(500).json({ message: 'Error del servidor al actualizar el trabajador.' });
+  } finally {
+    conn.release();
   }
 };
+// ... (deleteTrabajador e importTrabajadores no cambian)
 const deleteTrabajador = async (req, res) => {
   const { id } = req.params;
   try {
@@ -122,10 +207,9 @@ const importTrabajadores = async (req, res) => {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header) => header.trim().replace(/^\uFEFF/, ''),
-      delimiter: ",", // --- CORRECCIÓN AQUÍ ---
+      delimiter: ",",
     });
-
-    // Si el delimitador es incorrecto, el parser devuelve un solo objeto con las cabeceras como keys vacías
+    
     if (results.errors.some(e => e.code === 'MissingHeader')) {
         throw new Error('El delimitador del CSV es incorrecto. Por favor, usa punto y coma (;) como separador.');
     }
@@ -188,6 +272,7 @@ const importTrabajadores = async (req, res) => {
     conn.release();
   }
 };
+
 
 export {
   getAllTrabajadores,

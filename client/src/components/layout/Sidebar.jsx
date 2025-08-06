@@ -1,26 +1,32 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { RxDashboard } from 'react-icons/rx';
-import { FiUsers, FiGlobe, FiServer, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiUsers, FiGlobe, FiServer, FiLogOut, FiUser, FiBriefcase, FiMap, FiArchive } from 'react-icons/fi';
 import { FaUserTie } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 
-// El array de enlaces de navegación
+// El array de enlaces de navegación principal
 const navLinks = [
   { name: 'Dashboard', path: '/dashboard', icon: RxDashboard },
-   { name: 'Trabajadores', path: '/trabajadores', icon: FaUserTie },
+  { name: 'Trabajadores', path: '/trabajadores', icon: FaUserTie },
   { name: 'Usuarios', path: '/users', icon: FiUsers, roles: ['Administrador'] },
   { name: 'Sedes', path: '/sedes', icon: FiGlobe, roles: ['Administrador', 'Técnico'] },
   { name: 'Servicios', path: '/servicios', icon: FiServer },
+];
+
+// Array para el nuevo menú de gestión
+const managementLinks = [
+  { name: 'Puestos', path: '/gestion/puestos', icon: FiBriefcase, roles: ['Administrador'] },
+  { name: 'Departamentos', path: '/gestion/departamentos', icon: FiArchive, roles: ['Administrador'] },
+  { name: 'Territorios', path: '/gestion/territorios', icon: FiMap, roles: ['Administrador'] },
 ];
 
 function Sidebar({ isOpen, setIsOpen }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Estilo para el enlace activo
   const activeLinkStyle = {
-    backgroundColor: '#e5007e', // Tu color primario
+    backgroundColor: '#e5007e',
     color: 'white',
   };
 
@@ -31,20 +37,18 @@ function Sidebar({ isOpen, setIsOpen }) {
 
   return (
     <>
-      {/* Contenedor principal del Sidebar con clases para la responsividad */}
       <div 
         className={`fixed z-30 flex h-screen w-64 flex-col bg-secondary text-white transition-transform duration-300 ease-in-out md:static md:translate-x-0 
                    ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        {/* Encabezado con el logo */}
         <div className="flex h-20 items-center justify-center border-b border-white/10">
           <h1 className="font-poppins text-3xl font-bold text-white">
             Unifica
           </h1>
         </div>
 
-        {/* Navegación principal */}
-        <nav className="flex-grow p-4">
+        <nav className="flex-grow p-4 space-y-4 overflow-y-auto">
+          {/* Menú Principal */}
           <ul>
             {navLinks
               .filter(link => {
@@ -57,7 +61,7 @@ function Sidebar({ isOpen, setIsOpen }) {
                     to={link.path}
                     style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
                     className="flex items-center rounded-md px-4 py-3 text-lg transition-colors hover:bg-primary/80"
-                    onClick={() => setIsOpen(false)} // Cierra el menú al hacer clic en un enlace en móvil
+                    onClick={() => setIsOpen(false)}
                   >
                     <link.icon className="mr-3 h-6 w-6" />
                     {link.name}
@@ -65,9 +69,32 @@ function Sidebar({ isOpen, setIsOpen }) {
                 </li>
               ))}
           </ul>
+
+          {/* Menú de Gestión (solo para Administradores) */}
+          {user.rol === 'Administrador' && (
+            <div>
+              <h2 className="px-4 pt-4 pb-2 text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                Gestión
+              </h2>
+              <ul>
+                {managementLinks.map((link) => (
+                  <li key={link.name} className="mb-2">
+                    <NavLink
+                      to={link.path}
+                      style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                      className="flex items-center rounded-md px-4 py-3 text-lg transition-colors hover:bg-primary/80"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <link.icon className="mr-3 h-6 w-6" />
+                      {link.name}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </nav>
         
-        {/* Sección de perfil y cerrar sesión */}
         <div className="p-4 border-t border-white/10">
           <div className='flex items-center p-2 rounded-md mb-2 bg-black/20'>
             <FiUser className="h-6 w-6 mr-3 text-accent-2"/>
@@ -84,8 +111,7 @@ function Sidebar({ isOpen, setIsOpen }) {
           </button>
         </div>
       </div>
-
-      {/* Overlay para cerrar el menú al hacer clic fuera (solo en móvil) */}
+      
       {isOpen && (
         <div 
           onClick={() => setIsOpen(false)}

@@ -3,6 +3,9 @@ import toast from 'react-hot-toast';
 import trabajadoresService from '../../services/trabajadoresService';
 import { useAuth } from '../../context/AuthContext';
 
+// 1. Array con los IDs de los puestos que mostrarán el campo Territorio
+const PUESTOS_CON_TERRITORIO = [9, 10, 11];
+
 function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
   const [formData, setFormData] = useState({
     nombre: '',
@@ -10,6 +13,7 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
     email: '',
     telefono: '',
     puesto_id: '',
+    territorio_id: '',
     sede_id: '',
     centro_id: '',
     departamento_id: '',
@@ -21,8 +25,19 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
   const { token } = useAuth();
   const [lugarTrabajoTipo, setLugarTrabajoTipo] = useState('');
 
+  // 2. Lógica de visibilidad
+  const showTerritorioField = PUESTOS_CON_TERRITORIO.includes(Number(formData.puesto_id));
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const newFormData = { ...formData, [name]: value };
+
+    // 3. Si se cambia el puesto y no es uno de los que requiere territorio, se limpia el campo
+    if (name === 'puesto_id' && !PUESTOS_CON_TERRITORIO.includes(Number(value))) {
+      newFormData.territorio_id = '';
+    }
+    
+    setFormData(newFormData);
   };
 
   const handleLugarTipoChange = (e) => {
@@ -81,6 +96,18 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
                 {listas.puestos.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
+
+            {/* 4. Renderizado condicional del campo Territorio */}
+            {showTerritorioField && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Territorio (DT)</label>
+                <select name="territorio_id" value={formData.territorio_id} onChange={handleChange} className={inputStyle}>
+                  <option value="">-- Seleccionar Territorio --</option>
+                  {listas.territorios?.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+            )}
+            
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">Tipo de Ubicación</label>
               <select name="lugar_trabajo_tipo" value={lugarTrabajoTipo} onChange={handleLugarTipoChange} className={inputStyle}>
