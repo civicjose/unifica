@@ -13,6 +13,12 @@ import departamentosRoutes from './routes/departamentosRoutes.js';
 import tipoCentroRoutes from './routes/tipoCentroRoutes.js';
 import glpiRoutes from './routes/glpiRoutes.js';
 import historialRoutes from './routes/historialRoutes.js';
+import proveedoresRoutes from './routes/proveedoresRoutes.js';
+import aplicacionesRoutes from './routes/aplicacionesRoutes.js';
+import centroProveedorRoutes from './routes/centroProveedorRoutes.js';
+import sedeProveedorRoutes from './routes/sedeProveedorRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 
 const app = express();
 
@@ -32,6 +38,12 @@ app.use('/api/departamentos', departamentosRoutes);
 app.use('/api/tipos-centro', tipoCentroRoutes);
 app.use('/api/glpi', glpiRoutes);
 app.use('/api/historial', historialRoutes);
+app.use('/api/proveedores', proveedoresRoutes);
+app.use('/api/aplicaciones', aplicacionesRoutes);
+app.use('/api/centro-proveedor', centroProveedorRoutes);
+app.use('/api/sede-proveedor', sedeProveedorRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/search', searchRoutes);
 
 
 const PORT = process.env.PORT || 4000;

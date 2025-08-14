@@ -1,24 +1,16 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { RxDashboard } from 'react-icons/rx';
-import { FiUsers, FiGlobe, FiServer, FiLogOut, FiUser, FiBriefcase, FiMap, FiArchive } from 'react-icons/fi';
+import { FiGlobe, FiLogOut, FiUser, FiArchive, FiSettings } from 'react-icons/fi';
 import { FaUserTie } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 
 // El array de enlaces de navegación principal
 const navLinks = [
   { name: 'Dashboard', path: '/dashboard', icon: RxDashboard },
+  { name: 'Sedes', path: '/sedes', icon: FiArchive, roles: ['Administrador', 'Técnico'] },
+  { name: 'Centros', path: '/centros', icon: FiGlobe },
   { name: 'Trabajadores', path: '/trabajadores', icon: FaUserTie },
-  { name: 'Usuarios', path: '/users', icon: FiUsers, roles: ['Administrador'] },
-  { name: 'Sedes', path: '/sedes', icon: FiGlobe, roles: ['Administrador', 'Técnico'] },
-  { name: 'Servicios', path: '/servicios', icon: FiServer },
-];
-
-// Array para el nuevo menú de gestión
-const managementLinks = [
-  { name: 'Puestos', path: '/gestion/puestos', icon: FiBriefcase, roles: ['Administrador'] },
-  { name: 'Departamentos', path: '/gestion/departamentos', icon: FiArchive, roles: ['Administrador'] },
-  { name: 'Territorios', path: '/gestion/territorios', icon: FiMap, roles: ['Administrador'] },
 ];
 
 function Sidebar({ isOpen, setIsOpen }) {
@@ -70,26 +62,24 @@ function Sidebar({ isOpen, setIsOpen }) {
               ))}
           </ul>
 
-          {/* Menú de Gestión (solo para Administradores) */}
+          {/* Menú de Administración con enlace único a Configuración */}
           {user.rol === 'Administrador' && (
             <div>
               <h2 className="px-4 pt-4 pb-2 text-sm font-semibold text-slate-400 uppercase tracking-wider">
-                Gestión
+                Administración
               </h2>
               <ul>
-                {managementLinks.map((link) => (
-                  <li key={link.name} className="mb-2">
-                    <NavLink
-                      to={link.path}
-                      style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
-                      className="flex items-center rounded-md px-4 py-3 text-lg transition-colors hover:bg-primary/80"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <link.icon className="mr-3 h-6 w-6" />
-                      {link.name}
-                    </NavLink>
-                  </li>
-                ))}
+                <li className="mb-2">
+                  <NavLink
+                    to="/configuracion"
+                    style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                    className="flex items-center rounded-md px-4 py-3 text-lg transition-colors hover:bg-primary/80"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <FiSettings className="mr-3 h-6 w-6" />
+                    Configuración
+                  </NavLink>
+                </li>
               </ul>
             </div>
           )}

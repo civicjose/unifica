@@ -103,9 +103,15 @@ function GenericManagementPage({ title, fields, fetchAll, createItem, updateItem
           <ul className="divide-y divide-slate-200">
             {items.map(item => (
               <li key={item.id} className="flex items-center justify-between p-4 hover:bg-slate-50">
-                {/* Muestra el primer campo o una combinación */}
                 <span className="text-slate-800">
-                  {item.codigo ? `${item.codigo} - ${item.zona}` : item.nombre}
+                  {item.nombre_proveedor 
+                    ? item.nombre_proveedor
+                    : item.codigo 
+                      ? `${item.codigo} - ${item.zona}` 
+                      : item.nombre_completo
+                        ? `${item.abreviatura} - ${item.nombre_completo}`
+                        : item.nombre
+                  }
                 </span>
                 <div className="flex gap-2">
                   <button onClick={() => handleOpenModal(item)} className="text-blue-500 hover:text-blue-700"><FiEdit2 /></button>
