@@ -41,7 +41,7 @@ function DashboardPage() {
     { title: 'Trabajadores Activos', value: stats?.trabajadoresActivos ?? '0', icon: <FaUserTie className="h-8 w-8" />, color: 'primary', path: '/trabajadores' },
     { title: 'Sedes', value: stats?.totalSedes ?? '0', icon: <FiGlobe className="h-8 w-8" />, color: 'secondary', path: '/sedes' },
     { title: 'Centros', value: stats?.totalCentros ?? '0', icon: <FiBriefcase className="h-8 w-8" />, color: 'accent1', path: '/centros' },
-    { title: 'Proveedores', value: stats?.totalProveedores ?? '0', icon: <FiTruck className="h-8 w-8" />, color: 'accent2', path: '/configuracion' },
+    { title: 'Proveedores', value: stats?.totalProveedores ?? '0', icon: <FiTruck className="h-8 w-8" />, color: 'accent2', path: '/proveedores' },
   ];
 
   return (

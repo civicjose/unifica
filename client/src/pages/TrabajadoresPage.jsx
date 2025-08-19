@@ -88,7 +88,7 @@ function TrabajadoresPage() {
       // Se construye el objeto de listas para los modales, usando 'codigo' para la etiqueta de territorios
       setModalListOptions({
         puestos: puestosRes.data.map(p => ({ value: p.id, label: p.nombre })),
-        sedes: sedesRes.data.map(s => ({ value: s.id, label: s.nombre })),
+        sedes: sedesRes.data.map(s => ({ value: s.id, label: s.nombre_sede })),
         centros: centrosRes.data.map(c => ({ value: c.id, label: c.nombre })),
         departamentos: deptosRes.data.map(d => ({ value: d.id, label: d.nombre })),
         territorios: territoriosRes.data.map(t => ({ value: t.id, label: t.codigo })),

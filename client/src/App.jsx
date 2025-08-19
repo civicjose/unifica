@@ -9,6 +9,8 @@ import CentroDetailPage from './pages/CentroDetailPage';
 import ConfiguracionPage from './pages/ConfiguracionPage';
 import SedesPage from './pages/SedesPage';
 import SedeDetailPage from './pages/SedeDetailPage';
+import ProveedoresPage from './pages/ProveedoresPage';
+import ProveedorDetailPage from './pages/ProveedoresDetailPage';
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
           <Route path="/sedes/:id" element={<SedeDetailPage />} />
           <Route path="/centros" element={<CentrosPage />} />
           <Route path="/centros/:id" element={<CentroDetailPage />} />
+          <Route path="/proveedores" element={<ProveedoresPage />} />
+          <Route path="/proveedores/:id" element={<ProveedorDetailPage />} />
           <Route path="/configuracion" element={<ConfiguracionPage />} />
         </Route>
       </Routes>

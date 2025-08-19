@@ -42,17 +42,27 @@ const createTerritorio = (data, token) => axios.post(`${API_URL}/territorios`, d
 const updateTerritorio = (id, data, token) => axios.put(`${API_URL}/territorios/${id}`, data, getConfig(token));
 const deleteTerritorio = (id, token) => axios.delete(`${API_URL}/territorios/${id}`, getConfig(token));
 
+
 // --- CRUD Proveedores ---
 const getProveedores = (token) => axios.get(`${API_URL}/proveedores`, getConfig(token));
+const getProveedorById = (id, token) => axios.get(`${API_URL}/proveedores/${id}`, getConfig(token));
 const createProveedor = (data, token) => axios.post(`${API_URL}/proveedores`, data, getConfig(token));
 const updateProveedor = (id, data, token) => axios.put(`${API_URL}/proveedores/${id}`, data, getConfig(token));
 const deleteProveedor = (id, token) => axios.delete(`${API_URL}/proveedores/${id}`, getConfig(token));
+const getVinculosByProvider = (id, token) => axios.get(`${API_URL}/proveedores/${id}/vinculos`, getConfig(token));
+
 
 // --- CRUD Aplicaciones ---
 const getAplicaciones = (token) => axios.get(`${API_URL}/aplicaciones`, getConfig(token));
+const getAplicacionesByProveedor = (proveedorId, token) => axios.get(`${API_URL}/aplicaciones`, { ...getConfig(token), params: { proveedorId } });
 const createAplicacion = (data, token) => axios.post(`${API_URL}/aplicaciones`, data, getConfig(token));
 const updateAplicacion = (id, data, token) => axios.put(`${API_URL}/aplicaciones/${id}`, data, getConfig(token));
 const deleteAplicacion = (id, token) => axios.delete(`${API_URL}/aplicaciones/${id}`, getConfig(token));
+
+// --- Contactos de Aplicaciones ---
+const getAplicacionContactos = (appId, token) => axios.get(`${API_URL}/aplicaciones/${appId}/contactos`, getConfig(token));
+const setAplicacionContactos = (appId, contactIds, token) => axios.put(`${API_URL}/aplicaciones/${appId}/contactos`, { contactIds }, getConfig(token));
+
 
 // --- Centros ---
 const getCentroDetails = (id, token) => axios.get(`${API_URL}/centros/${id}/details`, getConfig(token));
@@ -92,6 +102,18 @@ const globalSearch = (term, token) => {
   return axios.get(`${API_URL}/search/global`, config);
 };
 
+// --- CRUD Contactos de Proveedores ---
+const getContactsByProvider = (proveedorId, token) => axios.get(`${API_URL}/proveedores/${proveedorId}/contactos`, getConfig(token));
+const createContact = (proveedorId, data, token) => axios.post(`${API_URL}/proveedores/${proveedorId}/contactos`, data, getConfig(token));
+const updateContact = (contactId, data, token) => axios.put(`${API_URL}/proveedores/contactos/${contactId}`, data, getConfig(token));
+const deleteContact = (contactId, token) => axios.delete(`${API_URL}/proveedores/contactos/${contactId}`, getConfig(token));
+
+// --- CRUD Categorías de Proveedor ---
+const getCategoriasProveedor = (token) => axios.get(`${API_URL}/categorias-proveedor`, getConfig(token));
+const createCategoriaProveedor = (data, token) => axios.post(`${API_URL}/categorias-proveedor`, data, getConfig(token));
+const updateCategoriaProveedor = (id, data, token) => axios.put(`${API_URL}/categorias-proveedor/${id}`, data, getConfig(token));
+const deleteCategoriaProveedor = (id, token) => axios.delete(`${API_URL}/categorias-proveedor/${id}`, getConfig(token));
+
 
 const apiService = {
   // Trabajadores
@@ -106,20 +128,23 @@ const apiService = {
   // CRUD Territorios
   createTerritorio, updateTerritorio, deleteTerritorio,
   // CRUD Proveedores
-  getProveedores, createProveedor, updateProveedor, deleteProveedor,
+  getProveedores, createProveedor, updateProveedor, deleteProveedor, getVinculosByProvider,
   // CRUD Aplicaciones
-  getAplicaciones, createAplicacion, updateAplicacion, deleteAplicacion,
+  getAplicaciones, createAplicacion, updateAplicacion, deleteAplicacion, getAplicacionesByProveedor, getAplicacionContactos, setAplicacionContactos,
   // CRUD Centros
   getCentroDetails, createCentro, updateCentro, deleteCentro,
   // CRUD Proveedores de Centros
-  addProveedorToCentro, updateProveedorInCentro, deleteProveedorFromCentro,
+  addProveedorToCentro, updateProveedorInCentro, deleteProveedorFromCentro, getProveedorById,
   // CRUD Tipos de Centro
   createTipoCentro, updateTipoCentro, deleteTipoCentro,
   // CRUD Sedes
    getSedeById, createSede, updateSede, deleteSede,
    getSedeDetails, addProveedorToSede, updateProveedorInSede, deleteProveedorFromSede,
   // Dashboard
-  getDashboardStats, globalSearch,
+  getDashboardStats, globalSearch, getContactsByProvider, createContact, updateContact, deleteContact,
+
+  // CRUD Categorías-Proveedor
+  getCategoriasProveedor, createCategoriaProveedor, updateCategoriaProveedor, deleteCategoriaProveedor,
 };
 
 export default apiService;

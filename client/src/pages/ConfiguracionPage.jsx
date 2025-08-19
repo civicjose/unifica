@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import apiService from '../services/apiService';
-import GenericManagementPage from './GenericManagementPage';
-import AplicacionesPage from './AplicacionesPage';
-import UsersPage from './UsersPage'; // <-- 1. Importa la página de usuarios
 
-// Configuración para cada pestaña
+// Importa los componentes que se usarán en las pestañas
+import GenericManagementPage from './GenericManagementPage';
+import UsersPage from './UsersPage';
+import CategoriasProveedorManager from '../components/configuracion/CategoriasProveedorManager';
+
+// Objeto de configuración actualizado, sin Proveedores ni Aplicaciones
 const TABS_CONFIG = {
-  // 2. Añade la nueva entrada para 'Usuarios'
-  Usuarios: {
+  'Usuarios': {
     component: UsersPage,
-    props: {} // La página de usuarios ya gestiona sus propios datos
+    props: {}
   },
-  Puestos: {
+  'Puestos': {
     component: GenericManagementPage,
     props: {
       title: "Puestos",
@@ -22,7 +23,7 @@ const TABS_CONFIG = {
       deleteItem: apiService.deletePuesto,
     }
   },
-  Departamentos: {
+  'Departamentos': {
     component: GenericManagementPage,
     props: {
       title: "Departamentos",
@@ -33,7 +34,7 @@ const TABS_CONFIG = {
       deleteItem: apiService.deleteDepartamento,
     }
   },
-  Territorios: {
+  'Territorios': {
     component: GenericManagementPage,
     props: {
       title: "Territorios",
@@ -47,25 +48,8 @@ const TABS_CONFIG = {
       deleteItem: apiService.deleteTerritorio,
     }
   },
-  Proveedores: {
-    component: GenericManagementPage,
-    props: {
-      title: "Proveedores",
-      fields: [
-        { name: 'nombre_proveedor', label: 'Nombre del Proveedor', required: true },
-        { name: 'url_proveedor', label: 'URL (Opcional)' },
-        { name: 'contacto_principal', label: 'Contacto (Opcional)' },
-        { name: 'telefono', label: 'Teléfono (Opcional)' },
-        { name: 'email', label: 'Email (Opcional)' },
-      ],
-      fetchAll: apiService.getProveedores,
-      createItem: apiService.createProveedor,
-      updateItem: apiService.updateProveedor,
-      deleteItem: apiService.deleteProveedor,
-    }
-  },
-  Aplicaciones: {
-    component: AplicacionesPage,
+  'Categorías Proveedor': {
+    component: CategoriasProveedorManager,
     props: {}
   },
   'Tipos de Centro': {
@@ -76,8 +60,6 @@ const TABS_CONFIG = {
             { name: 'abreviatura', label: 'Abreviatura (ej: RPM)' },
             { name: 'nombre_completo', label: 'Nombre Completo (ej: Residencia Para Mayores)' }
         ],
-        // ***** CORRECCIÓN AQUÍ *****
-        // Apuntamos a las nuevas funciones específicas que hemos creado
         fetchAll: apiService.getTiposCentro,
         createItem: apiService.createTipoCentro,
         updateItem: apiService.updateTipoCentro,
@@ -87,13 +69,12 @@ const TABS_CONFIG = {
 };
 
 function ConfiguracionPage() {
-  // 3. Hacemos que la pestaña por defecto sea 'Usuarios'
   const [activeTab, setActiveTab] = useState('Usuarios'); 
   
   const ActiveComponent = TABS_CONFIG[activeTab].component;
   const componentProps = TABS_CONFIG[activeTab].props;
 
-  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg transition-colors";
+  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg transition-colors focus:outline-none";
   const activeTabStyle = "bg-white text-primary border-b-2 border-primary";
   const inactiveTabStyle = "bg-transparent text-slate-500 hover:bg-slate-200/50";
 
@@ -102,7 +83,7 @@ function ConfiguracionPage() {
       <h1 className="text-4xl font-bold text-gray-800">Configuración del Sistema</h1>
       
       <div className="border-b border-slate-300">
-        <nav className="flex -mb-px">
+        <nav className="flex flex-wrap -mb-px">
           {Object.keys(TABS_CONFIG).map(tabName => (
             <button
               key={tabName}

@@ -1,11 +1,9 @@
 import pool from '../config/database.js';
 import Papa from 'papaparse';
 
-// Se elimina la función normalizeDate, ya no es necesaria.
 
 const getAllTrabajadores = async (req, res) => {
   const { search, sedes, centros, puestos, estado, territorios } = req.query;
-  // 1. Usamos DATE_FORMAT() en la consulta SQL para obtener las fechas como texto
   let query = `
     SELECT 
       t.id, t.nombre, t.apellidos, t.email, t.telefono, 
@@ -26,7 +24,6 @@ const getAllTrabajadores = async (req, res) => {
     LEFT JOIN departamentos d ON t.departamento_id = d.id
     LEFT JOIN territorios ter ON t.territorio_id = ter.id
   `;
-  // ... (el resto de la lógica de filtros no cambia)
   const whereClauses = [];
   const queryParams = [];
   if (search) {
@@ -131,7 +128,6 @@ const updateTrabajador = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // 2. Obtenemos los datos formateados directamente desde la BD
     const [trabajadoresActuales] = await conn.query(
       "SELECT id, nombre, apellidos, email, telefono, estado, DATE_FORMAT(fecha_alta, '%Y-%m-%d') as fecha_alta, DATE_FORMAT(fecha_baja, '%Y-%m-%d') as fecha_baja, observaciones, puesto_id, sede_id, centro_id, departamento_id, territorio_id FROM trabajadores WHERE id = ?", [id]
     );
@@ -142,13 +138,16 @@ const updateTrabajador = async (req, res) => {
     }
     const datosAnteriores = trabajadoresActuales[0];
 
-    // ... (actualización de datos)
     const { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, territorio_id, estado, fecha_alta, fecha_baja, observaciones } = datosNuevos;
     
     await conn.query(
       'UPDATE trabajadores SET nombre = ?, apellidos = ?, email = ?, telefono = ?, puesto_id = ?, sede_id = ?, centro_id = ?, departamento_id = ?, territorio_id = ?, estado = ?, fecha_alta = ?, fecha_baja = ?, observaciones = ? WHERE id = ?',
       [nombre, apellidos, email, telefono, puesto_id || null, sede_id || null, centro_id || null, departamento_id || null, territorio_id || null, estado, fecha_alta || null, fecha_baja || null, observaciones, id]
     );
+
+    if (estado === 'Alta') {
+      fecha_baja = null;
+    }
 
     for (const campo in datosNuevos) {
       if (datosNuevos.sede_id && campo === 'centro_id') continue;

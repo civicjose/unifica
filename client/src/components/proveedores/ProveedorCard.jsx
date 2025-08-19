@@ -49,9 +49,7 @@ function ProveedorCard({ proveedorInfo, onEdit, onDelete, onContactClick }) {
         </div>
       </div>
       
-      {/* --- CÓDIGO CORREGIDO Y FINAL --- */}
-      {/* Nos aseguramos de que aplicacion_contactos es un array antes de mapearlo */}
-      {Array.isArray(proveedorInfo.aplicacion_contactos) && proveedorInfo.aplicacion_contactos.length > 0 && (
+      {proveedorInfo.aplicacion_contactos && proveedorInfo.aplicacion_contactos.length > 0 && (
         <div className="mt-3 pt-3 border-t border-slate-200">
            <div className="flex items-start text-sm">
              <FiUsers className="h-4 w-4 mr-2 text-slate-500 flex-shrink-0 mt-1" />

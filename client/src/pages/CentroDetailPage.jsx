@@ -8,20 +8,22 @@ import ProveedorCard from '../components/centros/ProveedorCard';
 import AddProveedorModal from '../components/modals/AddProveedorModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import CentroModal from '../components/modals/CentroModal';
+import ContactoDetailModal from '../components/modals/ContactoDetailModal';
 
-// Componente para mostrar un bloque de información
-const InfoBlock = ({ title, children }) => (
-  <div className="bg-white p-6 rounded-xl border shadow-sm">
-    <h3 className="text-lg font-bold text-secondary border-b pb-2 mb-4">{title}</h3>
+const InfoBlock = ({ title, children, onEdit }) => (
+  <div className="bg-white p-6 rounded-xl border shadow-sm h-full">
+    <div className="flex justify-between items-center border-b pb-2 mb-4">
+      <h3 className="text-lg font-bold text-secondary">{title}</h3>
+      {onEdit && ( <button onClick={onEdit} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Información"><FiEdit /></button> )}
+    </div>
     <div className="space-y-4">{children}</div>
   </div>
 );
 
-// Componente para mostrar una línea de detalle (campo y valor)
 const DetailRow = ({ label, children }) => (
   <div>
     <p className="text-sm font-semibold text-slate-500">{label}</p>
-    <div className="text-slate-800 whitespace-pre-wrap mt-1">{children || '-'}</div>
+    <div className="text-slate-800 whitespace-pre-wrap mt-1 break-words">{children || '-'}</div>
   </div>
 );
 
@@ -31,12 +33,12 @@ function CentroDetailPage() {
   const [centro, setCentro] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // Estados para los modales
   const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false);
   const [isCentroModalOpen, setIsCentroModalOpen] = useState(false);
+  const [contactToShow, setContactToShow] = useState(null);
   const [proveedores, setProveedores] = useState([]);
   const [aplicaciones, setAplicaciones] = useState([]);
-  const [listas, setListas] = useState({ territorios: [], tiposCentro: [] });
+  const [listas, setListas] = useState({ territorios: [], tiposCentro: [], categorias: [] });
   const [itemToEdit, setItemToEdit] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -44,17 +46,22 @@ function CentroDetailPage() {
     if (token && id) {
       setLoading(true);
       try {
-        const [centroRes, provRes, appRes, terrRes, tiposRes] = await Promise.all([
+        const [centroRes, provRes, appRes, terrRes, tiposRes, catRes] = await Promise.all([
           apiService.getCentroDetails(id, token),
           apiService.getProveedores(token),
           apiService.getAplicaciones(token),
           apiService.getTerritorios(token),
           apiService.getTiposCentro(token),
+          apiService.getCategoriasProveedor(token),
         ]);
         setCentro(centroRes.data);
         setProveedores(provRes.data);
         setAplicaciones(appRes.data);
-        setListas({ territorios: terrRes.data, tiposCentro: tiposRes.data });
+        setListas({ 
+          territorios: terrRes.data, 
+          tiposCentro: tiposRes.data,
+          categorias: catRes.data
+        });
       } catch (error) {
         toast.error('No se pudo cargar la información del centro.');
       } finally {
@@ -65,12 +72,11 @@ function CentroDetailPage() {
 
   useEffect(() => { loadPageData(); }, [loadPageData]);
   
-  // Handlers para los modales de Proveedores
   const handleOpenAddProveedorModal = () => { setItemToEdit(null); setIsProveedorModalOpen(true); };
   const handleOpenEditProveedorModal = (item) => { setItemToEdit(item); setIsProveedorModalOpen(true); };
   const handleDeleteProveedorClick = (item) => { setItemToDelete(item); };
+  const handleContactClick = (contacto) => { setContactToShow(contacto); };
   
-  // Handler genérico para cuando un modal se cierra con éxito
   const handleModalSuccess = () => {
     setIsProveedorModalOpen(false);
     setIsCentroModalOpen(false);
@@ -91,7 +97,7 @@ function CentroDetailPage() {
     const baseUrl = 'https://sistemas.macrosad.com/front/computer.php';
     const params = new URLSearchParams({
       is_deleted: '0', as_map: '0', browse: '0',
-      'criteria[0][link]': 'AND', 'criteria[0][field]': '3',
+      'criteria[0][link]': 'AND', 'criteria[0][field]': '12',
       'criteria[0][searchtype]': 'contains', 'criteria[0][value]': centro.nombre_centro,
       itemtype: 'Computer',
     });
@@ -114,18 +120,16 @@ function CentroDetailPage() {
             </button>
           )}
         </div>
-        
         <h1 className="text-4xl font-bold text-gray-800">{centro.nombre_centro}</h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* ***** CORRECCIÓN AQUÍ: Se añade 'md:items-start' ***** */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:items-start">
           <div className="md:col-span-1 space-y-6">
             <InfoBlock title="Información General">
               <DetailRow label="Dirección">{`${centro.direccion || ''}, ${centro.codigo_postal || ''} ${centro.localidad || ''}, ${centro.provincia || ''}`}</DetailRow>
               <DetailRow label="Tipo de Centro">{centro.tipo_centro}</DetailRow>
               <DetailRow label="Territorio">{centro.territorio_codigo}</DetailRow>
-              {centro.observaciones && (
-                <DetailRow label="Observaciones">{centro.observaciones}</DetailRow>
-              )}
+              {centro.observaciones && (<DetailRow label="Observaciones">{centro.observaciones}</DetailRow>)}
             </InfoBlock>
             <InfoBlock title="Documentación y Activos">
               <div className="space-y-3">
@@ -156,6 +160,7 @@ function CentroDetailPage() {
                         proveedorInfo={proveedorInfo}
                         onEdit={handleOpenEditProveedorModal}
                         onDelete={handleDeleteProveedorClick}
+                        onContactClick={handleContactClick}
                       />
                     ))
                   ) : (
@@ -166,29 +171,10 @@ function CentroDetailPage() {
           </div>
         </div>
       </div>
-
-      <AddProveedorModal
-        isOpen={isProveedorModalOpen}
-        onClose={() => { setIsProveedorModalOpen(false); setItemToEdit(null); }}
-        onSuccess={handleModalSuccess}
-        centroId={id}
-        proveedores={proveedores}
-        aplicaciones={aplicaciones}
-        itemToEdit={itemToEdit}
-      />
-      <CentroModal
-        isOpen={isCentroModalOpen}
-        onClose={() => setIsCentroModalOpen(false)}
-        onSuccess={handleModalSuccess}
-        itemToEdit={centro}
-        listas={listas}
-      />
-      <ConfirmModal
-        isOpen={itemToDelete !== null}
-        onClose={() => setItemToDelete(null)}
-        onConfirm={handleConfirmDelete}
-        title="Desvincular Proveedor"
-      >
+      <AddProveedorModal isOpen={isProveedorModalOpen} onClose={() => { setIsProveedorModalOpen(false); setItemToEdit(null); }} onSuccess={handleModalSuccess} centroId={id} proveedores={proveedores} aplicaciones={aplicaciones} categorias={listas.categorias} itemToEdit={itemToEdit} />
+      <CentroModal isOpen={isCentroModalOpen} onClose={() => setIsCentroModalOpen(false)} onSuccess={handleModalSuccess} itemToEdit={centro} listas={listas} />
+      <ContactoDetailModal isOpen={contactToShow !== null} onClose={() => setContactToShow(null)} contacto={contactToShow} />
+      <ConfirmModal isOpen={itemToDelete !== null} onClose={() => setItemToDelete(null)} onConfirm={handleConfirmDelete} title="Desvincular Proveedor">
         <p>¿Seguro que quieres desvincular a <strong>{itemToDelete?.nombre_proveedor || itemToDelete?.nombre_aplicacion}</strong> de este centro?</p>
       </ConfirmModal>
     </>

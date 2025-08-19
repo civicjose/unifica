@@ -1,18 +1,41 @@
 import pool from '../config/database.js';
 
-// GET /api/aplicaciones - Obtener todas las aplicaciones con el nombre de su proveedor
+// GET /api/aplicaciones?proveedorId=... - Obtener todas las aplicaciones
 export const getAllAplicaciones = async (req, res) => {
+  const { proveedorId } = req.query;
   try {
-    const query = `
-      SELECT a.id, a.nombre_aplicacion, a.proveedor_id, p.nombre_proveedor
+    let query = `
+      SELECT 
+        a.id, a.nombre_aplicacion, a.proveedor_id, p.nombre_proveedor,
+        (SELECT JSON_ARRAYAGG(
+            JSON_OBJECT('id', pc.id, 'nombre', pc.nombre, 'email', pc.email, 'telefono', pc.telefono)
+          )
+         FROM aplicacion_contactos ac
+         JOIN proveedor_contactos pc ON ac.contacto_id = pc.id
+         WHERE ac.aplicacion_id = a.id
+        ) as contactos_asignados
       FROM aplicaciones a
       LEFT JOIN proveedores p ON a.proveedor_id = p.id
-      ORDER BY a.nombre_aplicacion
     `;
-    const [aplicaciones] = await pool.query(query);
-    res.json(aplicaciones);
+    const params = [];
+    if (proveedorId) {
+      query += ' WHERE a.proveedor_id = ?';
+      params.push(proveedorId);
+    }
+    query += ' GROUP BY a.id, p.nombre_proveedor';
+    query += ' ORDER BY a.nombre_aplicacion';
+    
+    const [aplicaciones] = await pool.query(query, params);
+
+    const aplicacionesProcesadas = aplicaciones.map(app => ({
+      ...app,
+      contactos_asignados: app.contactos_asignados ? JSON.parse(app.contactos_asignados) : []
+    }));
+
+    res.json(aplicacionesProcesadas);
   } catch (error) {
-    res.status(500).json({ message: 'Error del servidor al obtener aplicaciones.' });
+    console.error("Error al obtener aplicaciones:", error);
+    res.status(500).json({ message: 'Error del servidor al obtener aplicaciones.', error: error.message });
   }
 };
 
@@ -69,4 +92,39 @@ export const deleteAplicacion = async (req, res) => {
     }
     res.status(500).json({ message: 'Error del servidor al eliminar la aplicación.' });
   }
+};
+
+// GET /api/aplicaciones/:id/contactos - Obtener los IDs de los contactos asignados a una app
+export const getAplicacionContactos = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await pool.query('SELECT contacto_id FROM aplicacion_contactos WHERE aplicacion_id = ?', [id]);
+        res.json(rows.map(r => r.contacto_id));
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener los contactos de la aplicación.' });
+    }
+};
+
+// PUT /api/aplicaciones/:id/contactos - Asignar/actualizar los contactos de una app
+export const setAplicacionContactos = async (req, res) => {
+    const { id } = req.params;
+    const { contactIds } = req.body;
+    const conn = await pool.getConnection();
+    try {
+        await conn.beginTransaction();
+        await conn.query('DELETE FROM aplicacion_contactos WHERE aplicacion_id = ?', [id]);
+        
+        if (contactIds && contactIds.length > 0) {
+            const values = contactIds.map(contactId => [id, contactId]);
+            await conn.query('INSERT INTO aplicacion_contactos (aplicacion_id, contacto_id) VALUES ?', [values]);
+        }
+        
+        await conn.commit();
+        res.json({ message: 'Contactos de la aplicación actualizados con éxito.' });
+    } catch (error) {
+        await conn.rollback();
+        res.status(500).json({ message: 'Error al actualizar los contactos de la aplicación.' });
+    } finally {
+        conn.release();
+    }
 };

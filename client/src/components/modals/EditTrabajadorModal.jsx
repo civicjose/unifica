@@ -52,6 +52,10 @@ function EditTrabajadorModal({ isOpen, onClose, onTrabajadorUpdated, trabajador,
     if (name === 'puesto_id' && !PUESTOS_CON_TERRITORIO.includes(Number(value))) {
       newFormData.territorio_id = '';
     }
+
+    if (name === 'estado' && value === 'Alta') {
+      newFormData.fecha_baja = null;
+    }
     
     setFormData(newFormData);
   };

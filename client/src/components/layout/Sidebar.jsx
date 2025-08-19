@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { RxDashboard } from 'react-icons/rx';
-import { FiGlobe, FiLogOut, FiUser, FiArchive, FiSettings } from 'react-icons/fi';
+import { FiGlobe, FiLogOut, FiUser, FiArchive, FiSettings, FiTruck } from 'react-icons/fi';
 import { FaUserTie } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 
@@ -11,6 +11,7 @@ const navLinks = [
   { name: 'Sedes', path: '/sedes', icon: FiArchive, roles: ['Administrador', 'Técnico'] },
   { name: 'Centros', path: '/centros', icon: FiGlobe },
   { name: 'Trabajadores', path: '/trabajadores', icon: FaUserTie },
+  { name: 'Proveedores', path: '/proveedores', icon: FiTruck },
 ];
 
 function Sidebar({ isOpen, setIsOpen }) {

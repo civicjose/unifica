@@ -19,6 +19,7 @@ import centroProveedorRoutes from './routes/centroProveedorRoutes.js';
 import sedeProveedorRoutes from './routes/sedeProveedorRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import categoriasProveedorRoutes from './routes/categoriasProveedorRoutes.js';
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/centro-proveedor', centroProveedorRoutes);
 app.use('/api/sede-proveedor', sedeProveedorRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/categorias-proveedor', categoriasProveedorRoutes);
 
 
 const PORT = process.env.PORT || 4000;

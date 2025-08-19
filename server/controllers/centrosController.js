@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 
+// GET /api/centros - Obtener todos los centros para la lista principal
 export const getAllCentros = async (req, res) => {
   try {
     const query = `
@@ -14,28 +15,18 @@ export const getAllCentros = async (req, res) => {
     const [centros] = await pool.query(query);
     res.json(centros);
   } catch (error) { 
-    console.error("Error detallado al obtener los centros:", error); // Esto lo verás en la consola de nodemon
-    // Enviamos un mensaje de error más específico al frontend
-    res.status(500).json({ 
-        message: 'Error del servidor al obtener los centros.',
-        error: error.message // <-- La clave está aquí
-    }); 
+    console.error("Error al obtener los centros:", error);
+    res.status(500).json({ message: 'Error del servidor al obtener los centros.' }); 
   }
 };
 
+// GET /api/centros/:id/details - Obtiene todos los detalles de un centro específico para la ficha
 export const getCentroDetails = async (req, res) => {
   const { id } = req.params;
   const conn = await pool.getConnection();
 
   try {
-    const centroQuery = `
-      SELECT 
-        c.*, t.codigo as territorio_codigo, tc.nombre_completo as tipo_centro
-      FROM centros c
-      LEFT JOIN territorios t ON c.territorio_id = t.id
-      LEFT JOIN tipo_centro tc ON c.tipo_centro_id = tc.id
-      WHERE c.id = ?;
-    `;
+    const centroQuery = `SELECT c.*, t.codigo as territorio_codigo, tc.nombre_completo as tipo_centro FROM centros c LEFT JOIN territorios t ON c.territorio_id = t.id LEFT JOIN tipo_centro tc ON c.tipo_centro_id = tc.id WHERE c.id = ?;`;
     const [centros] = await conn.query(centroQuery, [id]);
 
     if (centros.length === 0) {
@@ -43,37 +34,32 @@ export const getCentroDetails = async (req, res) => {
     }
     const centroDetails = centros[0];
 
-    const serviciosQuery = `
+    const proveedoresQuery = `
       SELECT 
-        cp.id, cp.categoria, cp.detalles,
+        cp.id, cp.categoria, cp.detalles, cp.proveedor_id, cp.aplicacion_id,
         p.nombre_proveedor, p.url_proveedor,
-        a.nombre_aplicacion
+        a.nombre_aplicacion,
+        (SELECT JSON_ARRAYAGG(
+            JSON_OBJECT('id', pc.id, 'nombre', pc.nombre, 'cargo', pc.cargo, 'email', pc.email, 'telefono', pc.telefono, 'observaciones', pc.observaciones)
+          )
+         FROM aplicacion_contactos ac
+         JOIN proveedor_contactos pc ON ac.contacto_id = pc.id
+         WHERE ac.aplicacion_id = cp.aplicacion_id) as aplicacion_contactos
       FROM centro_proveedor cp
       LEFT JOIN proveedores p ON cp.proveedor_id = p.id
       LEFT JOIN aplicaciones a ON cp.aplicacion_id = a.id
       WHERE cp.centro_id = ?
       ORDER BY cp.categoria, p.nombre_proveedor;
     `;
-    const [servicios] = await conn.query(serviciosQuery, [id]);
+    const [proveedores] = await conn.query(proveedoresQuery, [id]);
 
-    const serviciosProcesados = servicios.map(servicio => {
-      try {
-        const detallesParseados = typeof servicio.detalles === 'string' 
-          ? JSON.parse(servicio.detalles) 
-          : servicio.detalles;
-        
-        return { ...servicio, detalles: detallesParseados };
-      } catch (e) {
-        return { ...servicio, detalles: null };
-      }
-    });
+    const proveedoresProcesados = proveedores.map(p => ({
+      ...p,
+      detalles: typeof p.detalles === 'string' ? JSON.parse(p.detalles) : p.detalles,
+      aplicacion_contactos: p.aplicacion_contactos ? JSON.parse(p.aplicacion_contactos) : []
+    }));
 
-    const response = {
-      ...centroDetails,
-      servicios: serviciosProcesados
-    };
-    
-    res.json(response);
+    res.json({ ...centroDetails, servicios: proveedoresProcesados });
 
   } catch (error) {
     console.error("Error al obtener los detalles del centro:", error);
@@ -83,6 +69,35 @@ export const getCentroDetails = async (req, res) => {
   }
 };
 
+// POST /api/centros - Crear un nuevo centro
+export const createCentro = async (req, res) => {
+  const { 
+    nombre_centro, direccion, codigo_postal, localidad, provincia, 
+    territorio_id, tipo_centro_id, observaciones, repositorio_fotografico 
+  } = req.body;
+
+  if (!nombre_centro) {
+    return res.status(400).json({ message: 'El nombre del centro es requerido.' });
+  }
+  try {
+    const query = `
+      INSERT INTO centros (
+        nombre_centro, direccion, codigo_postal, localidad, provincia, 
+        territorio_id, tipo_centro_id, observaciones, repositorio_fotografico
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const [result] = await pool.query(query, [
+      nombre_centro, direccion, codigo_postal, localidad, provincia,
+      territorio_id || null, tipo_centro_id || null, observaciones, repositorio_fotografico
+    ]);
+    res.status(201).json({ id: result.insertId, ...req.body });
+  } catch (error) {
+    console.error("Error al crear el centro:", error);
+    res.status(500).json({ message: 'Error del servidor al crear el centro.' });
+  }
+};
+
+// PUT /api/centros/:id - Actualizar un centro existente
 export const updateCentro = async (req, res) => {
   const { id } = req.params;
   const { 
@@ -117,37 +132,6 @@ export const updateCentro = async (req, res) => {
   }
 };
 
-
-// ***** NUEVAS FUNCIONES *****
-
-// POST /api/centros - Crear un nuevo centro
-export const createCentro = async (req, res) => {
-  const { 
-    nombre_centro, direccion, codigo_postal, localidad, provincia, 
-    territorio_id, tipo_centro_id, observaciones, repositorio_fotografico 
-  } = req.body;
-
-  if (!nombre_centro) {
-    return res.status(400).json({ message: 'El nombre del centro es requerido.' });
-  }
-  try {
-    const query = `
-      INSERT INTO centros (
-        nombre_centro, direccion, codigo_postal, localidad, provincia, 
-        territorio_id, tipo_centro_id, observaciones, repositorio_fotografico
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const [result] = await pool.query(query, [
-      nombre_centro, direccion, codigo_postal, localidad, provincia,
-      territorio_id || null, tipo_centro_id || null, observaciones, repositorio_fotografico
-    ]);
-    res.status(201).json({ id: result.insertId, ...req.body });
-  } catch (error) {
-    console.error("Error al crear el centro:", error);
-    res.status(500).json({ message: 'Error del servidor al crear el centro.' });
-  }
-};
-
 // DELETE /api/centros/:id - Eliminar un centro
 export const deleteCentro = async (req, res) => {
   const { id } = req.params;
@@ -159,7 +143,7 @@ export const deleteCentro = async (req, res) => {
     res.status(204).send();
   } catch (error) {
     if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-        return res.status(400).json({ message: 'No se puede eliminar. Este centro tiene trabajadores o servicios asignados.' });
+        return res.status(400).json({ message: 'No se puede eliminar. Este centro tiene trabajadores o proveedores asignados.' });
     }
     res.status(500).json({ message: 'Error del servidor al eliminar el centro.' });
   }
