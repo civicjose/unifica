@@ -1,8 +1,8 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-//const API_URL = 'http://localhost:4000/api';
-const API_URL = '/api';
+const API_URL = 'http://localhost:4000/api';
+//const API_URL = '/api';
 
 axios.interceptors.response.use(
   (response) => response,
@@ -86,6 +86,7 @@ const getCentroDetails = (id, token) => axios.get(`${API_URL}/centros/${id}/deta
 const createCentro = (data, token) => axios.post(`${API_URL}/centros`, data, getConfig(token));
 const updateCentro = (id, data, token) => axios.put(`${API_URL}/centros/${id}`, data, getConfig(token));
 const deleteCentro = (id, token) => axios.delete(`${API_URL}/centros/${id}`, getConfig(token));
+const getDirectoresByCentro = (id, token) => axios.get(`${API_URL}/centros/${id}/directores`, getConfig(token)); // <-- Nueva función
 
 // --- Sedes ---
 const getSedeDetails = (id, token) => axios.get(`${API_URL}/sedes/${id}/details`, getConfig(token));
@@ -119,7 +120,7 @@ const apiService = {
   getProveedores, getProveedorById, createProveedor, updateProveedor, deleteProveedor, getVinculosByProvider,
   getContactsByProvider, createContact, updateContact, deleteContact,
   getAplicaciones, getAplicacionesByProveedor, createAplicacion, updateAplicacion, deleteAplicacion, getAplicacionContactos, setAplicacionContactos,
-  getCentroDetails, createCentro, updateCentro, deleteCentro,
+  getCentroDetails, createCentro, updateCentro, deleteCentro, getDirectoresByCentro,
   getSedeDetails, getSedeById, createSede, updateSede, deleteSede,
   addProveedorToCentro, updateProveedorInCentro, deleteProveedorFromCentro,
   addProveedorToSede, updateProveedorInSede, deleteProveedorFromSede,

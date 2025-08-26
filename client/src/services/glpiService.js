@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-//const API_URL = 'http://localhost:4000/api/glpi';
-const API_URL = '/api/glpi';
+const API_URL = 'http://localhost:4000/api/glpi';
+//const API_URL = '/api/glpi';
 
 const getConfig = (token) => ({
   headers: { Authorization: `Bearer ${token}` },

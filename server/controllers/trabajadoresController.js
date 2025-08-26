@@ -1,6 +1,16 @@
 import pool from '../config/database.js';
 import Papa from 'papaparse';
 
+// Función auxiliar para normalizar fechas, crucial para la comparación en el historial
+const normalizeDate = (date) => {
+    if (!date) return null;
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return null;
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 const getAllTrabajadores = async (req, res) => {
   const { search, sedes, centros, puestos, estado, territorios } = req.query;
@@ -118,7 +128,6 @@ const createTrabajador = async (req, res) => {
   }
 };
 
-
 const updateTrabajador = async (req, res) => {
   const { id } = req.params;
   const datosNuevos = req.body;
@@ -129,7 +138,7 @@ const updateTrabajador = async (req, res) => {
     await conn.beginTransaction();
 
     const [trabajadoresActuales] = await conn.query(
-      "SELECT id, nombre, apellidos, email, telefono, estado, DATE_FORMAT(fecha_alta, '%Y-%m-%d') as fecha_alta, DATE_FORMAT(fecha_baja, '%Y-%m-%d') as fecha_baja, observaciones, puesto_id, sede_id, centro_id, departamento_id, territorio_id FROM trabajadores WHERE id = ?", [id]
+      "SELECT *, DATE_FORMAT(fecha_alta, '%Y-%m-%d') as fecha_alta, DATE_FORMAT(fecha_baja, '%Y-%m-%d') as fecha_baja FROM trabajadores WHERE id = ?", [id]
     );
 
     if (trabajadoresActuales.length === 0) {
@@ -138,30 +147,39 @@ const updateTrabajador = async (req, res) => {
     }
     const datosAnteriores = trabajadoresActuales[0];
 
-    const { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, territorio_id, estado, fecha_alta, fecha_baja, observaciones } = datosNuevos;
+    // --- CORRECCIÓN 1: Se cambia 'const' por 'let' para permitir la modificación ---
+    let { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, territorio_id, estado, fecha_alta, fecha_baja, observaciones } = datosNuevos;
     
-    await conn.query(
-      'UPDATE trabajadores SET nombre = ?, apellidos = ?, email = ?, telefono = ?, puesto_id = ?, sede_id = ?, centro_id = ?, departamento_id = ?, territorio_id = ?, estado = ?, fecha_alta = ?, fecha_baja = ?, observaciones = ? WHERE id = ?',
-      [nombre, apellidos, email, telefono, puesto_id || null, sede_id || null, centro_id || null, departamento_id || null, territorio_id || null, estado, fecha_alta || null, fecha_baja || null, observaciones, id]
-    );
-
+    // --- CORRECCIÓN 2: Esta lógica se ejecuta ANTES de la consulta UPDATE ---
     if (estado === 'Alta') {
       fecha_baja = null;
     }
+    
+    await conn.query(
+      'UPDATE trabajadores SET nombre = ?, apellidos = ?, email = ?, telefono = ?, puesto_id = ?, sede_id = ?, centro_id = ?, departamento_id = ?, territorio_id = ?, estado = ?, fecha_alta = ?, fecha_baja = ?, observaciones = ? WHERE id = ?',
+      [nombre, apellidos, email, telefono, puesto_id || null, sede_id || null, centro_id || null, departamento_id || null, territorio_id || null, estado, fecha_alta || null, fecha_baja, observaciones, id]
+    );
 
     for (const campo in datosNuevos) {
       if (datosNuevos.sede_id && campo === 'centro_id') continue;
       if (datosNuevos.centro_id && (campo === 'sede_id' || campo === 'departamento_id')) continue;
 
-      // 3. Ahora la comparación es directa entre strings 'YYYY-MM-DD'
-      const valorAnterior = datosAnteriores[campo] ?? null;
-      const valorNuevo = datosNuevos[campo] ?? null;
+      let valorAnterior = datosAnteriores[campo];
+      let valorNuevo = datosNuevos[campo];
       
-      if (String(valorAnterior) !== String(valorNuevo)) {
-        if ((valorAnterior === null || valorAnterior === '') && (valorNuevo === null || valorNuevo === '')) {
+      let valorAnteriorComparable = valorAnterior ?? null;
+      let valorNuevoComparable = valorNuevo ?? null;
+
+      // Se normalizan las fechas para una comparación precisa en el historial
+      if (campo === 'fecha_alta' || campo === 'fecha_baja') {
+        valorAnteriorComparable = normalizeDate(valorAnterior);
+        valorNuevoComparable = normalizeDate(valorNuevo);
+      }
+      
+      if (String(valorAnteriorComparable) !== String(valorNuevoComparable)) {
+        if ((valorAnteriorComparable === null || valorAnteriorComparable === '') && (valorNuevoComparable === null || valorNuevoComparable === '')) {
             continue;
         }
-
         await conn.query(
           'INSERT INTO historial_modificaciones (usuario_modificador_id, tipo_accion, entidad_modificada, id_entidad_modificada, campo_modificado, valor_anterior, valor_nuevo) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [usuarioId, 'UPDATE', 'trabajadores', id, campo, valorAnterior, valorNuevo]
@@ -180,7 +198,6 @@ const updateTrabajador = async (req, res) => {
     conn.release();
   }
 };
-// ... (deleteTrabajador e importTrabajadores no cambian)
 const deleteTrabajador = async (req, res) => {
   const { id } = req.params;
   try {
@@ -272,11 +289,24 @@ const importTrabajadores = async (req, res) => {
   }
 };
 
+const getDirectoresDeCentro = async (req, res) => {
+  try {
+    const puestoIdDirector = 12; // ID del puesto "Director/a de Centro"
+    const [directores] = await pool.query(
+      'SELECT id, nombre, apellidos FROM trabajadores WHERE puesto_id = ? AND estado = "Alta" ORDER BY apellidos, nombre',
+      [puestoIdDirector]
+    );
+    res.json(directores);
+  } catch (error) {
+    res.status(500).json({ message: 'Error del servidor al obtener los directores.' });
+  }
+};
 
 export {
   getAllTrabajadores,
   createTrabajador,
   updateTrabajador,
   deleteTrabajador,
-  importTrabajadores
+  importTrabajadores,
+  getDirectoresDeCentro
 };

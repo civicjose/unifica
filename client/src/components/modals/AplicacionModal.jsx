@@ -30,7 +30,7 @@ function AplicacionModal({ isOpen, onClose, onSubmit, itemToEdit }) {
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="w-full rounded-lg border-slate-300 bg-slate-50 px-3 py-2"
+              className="w-full rounded-lg border-slate-300 bg-slate-100 px-3 py-2"
               required
             />
           </div>

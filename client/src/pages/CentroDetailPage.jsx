@@ -10,16 +10,22 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 import CentroModal from '../components/modals/CentroModal';
 import ContactoDetailModal from '../components/modals/ContactoDetailModal';
 
+// Componente para mostrar un bloque de información
 const InfoBlock = ({ title, children, onEdit }) => (
   <div className="bg-white p-6 rounded-xl border shadow-sm h-full">
     <div className="flex justify-between items-center border-b pb-2 mb-4">
       <h3 className="text-lg font-bold text-secondary">{title}</h3>
-      {onEdit && ( <button onClick={onEdit} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Información"><FiEdit /></button> )}
+      {onEdit && (
+        <button onClick={onEdit} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Información">
+          <FiEdit />
+        </button>
+      )}
     </div>
     <div className="space-y-4">{children}</div>
   </div>
 );
 
+// Componente para mostrar una línea de detalle (campo y valor)
 const DetailRow = ({ label, children }) => (
   <div>
     <p className="text-sm font-semibold text-slate-500">{label}</p>
@@ -31,6 +37,7 @@ function CentroDetailPage() {
   const { id } = useParams();
   const { token, user } = useAuth();
   const [centro, setCentro] = useState(null);
+  const [directores, setDirectores] = useState([]); // Estado para los directores
   const [loading, setLoading] = useState(true);
   
   const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false);
@@ -46,15 +53,26 @@ function CentroDetailPage() {
     if (token && id) {
       setLoading(true);
       try {
-        const [centroRes, provRes, appRes, terrRes, tiposRes, catRes] = await Promise.all([
+        const [
+          centroRes, 
+          directoresRes, // Se carga la lista de directores para este centro
+          provRes, 
+          appRes, 
+          terrRes, 
+          tiposRes, 
+          catRes
+        ] = await Promise.all([
           apiService.getCentroDetails(id, token),
+          apiService.getDirectoresByCentro(id, token), 
           apiService.getProveedores(token),
           apiService.getAplicaciones(token),
           apiService.getTerritorios(token),
           apiService.getTiposCentro(token),
           apiService.getCategoriasProveedor(token),
         ]);
+
         setCentro(centroRes.data);
+        setDirectores(directoresRes.data); // Se guardan los directores en el estado
         setProveedores(provRes.data);
         setAplicaciones(appRes.data);
         setListas({ 
@@ -121,14 +139,27 @@ function CentroDetailPage() {
           )}
         </div>
         <h1 className="text-4xl font-bold text-gray-800">{centro.nombre_centro}</h1>
-        
-        {/* ***** CORRECCIÓN AQUÍ: Se añade 'md:items-start' ***** */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:items-start">
           <div className="md:col-span-1 space-y-6">
             <InfoBlock title="Información General">
               <DetailRow label="Dirección">{`${centro.direccion || ''}, ${centro.codigo_postal || ''} ${centro.localidad || ''}, ${centro.provincia || ''}`}</DetailRow>
               <DetailRow label="Tipo de Centro">{centro.tipo_centro}</DetailRow>
               <DetailRow label="Territorio">{centro.territorio_codigo}</DetailRow>
+              <DetailRow label="Director/a del Centro">
+                {directores.length > 0 ? (
+                  <div className="space-y-2">
+                    {directores.map(dir => (
+                      <div key={dir.id}>
+                        <p className="font-semibold">{`${dir.nombre} ${dir.apellidos}`}</p>
+                        <p className="text-sm text-slate-500">{dir.email}</p>
+                        <p className="text-sm text-slate-500">{dir.telefono}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span>No asignado</span>
+                )}
+              </DetailRow>
               {centro.observaciones && (<DetailRow label="Observaciones">{centro.observaciones}</DetailRow>)}
             </InfoBlock>
             <InfoBlock title="Documentación y Activos">

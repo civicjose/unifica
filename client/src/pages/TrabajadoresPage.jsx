@@ -89,7 +89,7 @@ function TrabajadoresPage() {
       setModalListOptions({
         puestos: puestosRes.data.map(p => ({ value: p.id, label: p.nombre })),
         sedes: sedesRes.data.map(s => ({ value: s.id, label: s.nombre_sede })),
-        centros: centrosRes.data.map(c => ({ value: c.id, label: c.nombre })),
+        centros: centrosRes.data.map(c => ({ value: c.id, label: c.nombre_centro })),
         departamentos: deptosRes.data.map(d => ({ value: d.id, label: d.nombre })),
         territorios: territoriosRes.data.map(t => ({ value: t.id, label: t.codigo })),
       });

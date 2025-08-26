@@ -34,7 +34,7 @@ function AddUserModal({ isOpen, onClose, onUserAdded }) {
   if (!isOpen) return null;
 
    // Clases base para todos los inputs y selects
-  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
 
   if (!isOpen) return null;
 
