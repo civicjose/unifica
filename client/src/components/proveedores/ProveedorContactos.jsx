@@ -8,6 +8,7 @@ import ConfirmModal from '../modals/ConfirmModal';
 
 // Sub-componente para la Tarjeta de Contacto individual
 const ContactoCard = ({ contacto, onEdit, onDelete }) => {
+const { user } = useAuth();
   return (
     <div className="bg-slate-50/70 rounded-lg p-4 border relative">
       <div className="flex items-center gap-4">
@@ -36,8 +37,12 @@ const ContactoCard = ({ contacto, onEdit, onDelete }) => {
         )}
       </div>
       <div className="absolute top-2 right-2 flex gap-1">
-        <button onClick={() => onEdit(contacto)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Contacto"><FiEdit2 size={16}/></button>
-        <button onClick={() => onDelete(contacto)} className="p-2 text-red-600 hover:bg-red-100 rounded-full" title="Eliminar Contacto"><FiTrash2 size={16}/></button>
+       {['Administrador', 'Técnico'].includes(user.rol) && (
+          <button onClick={() => onEdit(contacto)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Contacto"><FiEdit2 size={16}/></button>
+        )}
+        {user.rol === 'Administrador' && (
+          <button onClick={() => onDelete(contacto)} className="p-2 text-red-600 hover:bg-red-100 rounded-full" title="Eliminar Contacto"><FiTrash2 size={16}/></button>
+        )}
       </div>
     </div>
   );
@@ -45,7 +50,7 @@ const ContactoCard = ({ contacto, onEdit, onDelete }) => {
 
 // Componente principal de la pestaña
 function ProveedorContactos({ proveedorId, contactos, onUpdate }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -84,11 +89,13 @@ function ProveedorContactos({ proveedorId, contactos, onUpdate }) {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <button onClick={handleOpenAddModal} className="flex items-center gap-2 rounded-full bg-primary text-white px-4 py-2 text-sm font-bold shadow-md">
-          <FiPlus /> Añadir Contacto
-        </button>
-      </div>
+      {['Administrador', 'Técnico'].includes(user.rol) && (
+        <div className="flex justify-end mb-4">
+          <button onClick={handleOpenAddModal} className="flex items-center gap-2 rounded-full bg-primary text-white px-4 py-2 text-sm font-bold shadow-md">
+            <FiPlus /> Añadir Contacto
+          </button>
+        </div>
+      )}
       
       {contactos && contactos.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

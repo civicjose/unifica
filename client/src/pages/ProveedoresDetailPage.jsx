@@ -13,6 +13,7 @@ const InfoBlock = ({ title, children, onEdit }) => (
     <div className="bg-white p-6 rounded-xl border shadow-sm h-full">
         <div className="flex justify-between items-center border-b pb-2 mb-4">
             <h3 className="text-lg font-bold text-secondary">{title}</h3>
+            {/* --- CONTROL DE ROL: El botón de editar solo se muestra si onEdit existe --- */}
             {onEdit && <button onClick={onEdit} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Información"><FiEdit /></button>}
         </div>
         <div className="space-y-4">{children}</div>
@@ -28,9 +29,9 @@ const DetailRow = ({ label, children }) => (
 
 function ProveedorDetailPage() {
   const { id } = useParams();
-  const { token, user } = useAuth();
+  const { token, user } = useAuth(); // Obtenemos el usuario
   const [proveedor, setProveedor] = useState(null);
-  const [contactos, setContactos] = useState([]); // <-- El estado de los contactos vive aquí
+  const [contactos, setContactos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('contactos');
   const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false);
@@ -44,7 +45,7 @@ function ProveedorDetailPage() {
         apiService.getContactsByProvider(id, token)
       ]);
       setProveedor(proveedorRes.data);
-      setContactos(contactosRes.data); // <-- Se actualiza la lista de contactos
+      setContactos(contactosRes.data);
     } catch (error) {
       toast.error('No se pudo cargar la información del proveedor.');
     } finally {
@@ -66,10 +67,8 @@ function ProveedorDetailPage() {
     if (!proveedor) return null;
     switch (activeTab) {
       case 'contactos':
-        // Pasamos la lista de contactos y la función de recarga
         return <ProveedorContactos proveedorId={proveedor.id} contactos={contactos} onUpdate={loadData} />;
       case 'aplicaciones':
-        // Pasamos la misma lista de contactos
         return <ProveedorAplicaciones proveedor={proveedor} contactos={contactos} />;
       case 'vinculos':
         return <ProveedorVinculos proveedorId={proveedor.id} />;
@@ -92,7 +91,10 @@ function ProveedorDetailPage() {
         <h1 className="text-4xl font-bold text-gray-800">{proveedor.nombre_proveedor}</h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 space-y-6">
-            <InfoBlock title="Información General" onEdit={user.rol === 'Administrador' ? () => setIsProveedorModalOpen(true) : null}>
+            <InfoBlock 
+              title="Información General" 
+              onEdit={['Administrador', 'Técnico'].includes(user.rol) ? () => setIsProveedorModalOpen(true) : null}
+            >
               <DetailRow label="Página Web"><a href={proveedor.url_proveedor} target="_blank" rel="noopener noreferrer" className="text-blue-600">{proveedor.url_proveedor}</a></DetailRow>
               <DetailRow label="Teléfono">{proveedor.telefono}</DetailRow>
               <DetailRow label="Email">{proveedor.email}</DetailRow>

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import apiService from '../services/apiService';
 import toast from 'react-hot-toast';
 import { FiPlus, FiSearch } from 'react-icons/fi';
-import ProveedorListItemCard from '../components/proveedores/ProveedorListItemCard'; // <-- Usa la nueva tarjeta
+import ProveedorListItemCard from '../components/proveedores/ProveedorListItemCard';
 import ProveedorModal from '../components/modals/ProveedorModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 
@@ -11,7 +11,7 @@ function ProveedoresPage() {
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const { token, user } = useAuth();
+  const { token, user } = useAuth(); // Obtenemos el usuario
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState(null);
@@ -77,7 +77,7 @@ function ProveedoresPage() {
             />
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          {user.rol === 'Administrador' && (
+          {['Administrador', 'Técnico'].includes(user.rol) && (
             <button onClick={handleOpenAddModal} className="flex-shrink-0 flex items-center gap-2 rounded-full bg-primary text-white px-4 py-2 text-sm font-bold shadow-md">
               <FiPlus /> Añadir Proveedor
             </button>

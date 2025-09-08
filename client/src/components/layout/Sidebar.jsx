@@ -5,10 +5,9 @@ import { FiGlobe, FiLogOut, FiUser, FiArchive, FiSettings, FiTruck } from 'react
 import { FaUserTie } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 
-// El array de enlaces de navegación principal
 const navLinks = [
   { name: 'Dashboard', path: '/dashboard', icon: RxDashboard },
-  { name: 'Sedes', path: '/sedes', icon: FiArchive, roles: ['Administrador', 'Técnico'] },
+  { name: 'Sedes', path: '/sedes', icon: FiArchive },
   { name: 'Centros', path: '/centros', icon: FiGlobe },
   { name: 'Trabajadores', path: '/trabajadores', icon: FaUserTie },
   { name: 'Proveedores', path: '/proveedores', icon: FiTruck },
@@ -41,14 +40,8 @@ function Sidebar({ isOpen, setIsOpen }) {
         </div>
 
         <nav className="flex-grow p-4 space-y-4 overflow-y-auto">
-          {/* Menú Principal */}
           <ul>
-            {navLinks
-              .filter(link => {
-                if (!link.roles) return true;
-                return user && link.roles.includes(user.rol);
-              })
-              .map((link) => (
+            {navLinks.map((link) => (
                 <li key={link.name} className="mb-2">
                   <NavLink
                     to={link.path}
@@ -62,8 +55,6 @@ function Sidebar({ isOpen, setIsOpen }) {
                 </li>
               ))}
           </ul>
-
-          {/* Menú de Administración con enlace único a Configuración */}
           {user.rol === 'Administrador' && (
             <div>
               <h2 className="px-4 pt-4 pb-2 text-sm font-semibold text-slate-400 uppercase tracking-wider">

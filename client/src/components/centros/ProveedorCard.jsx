@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { FiEdit, FiTrash2, FiBox, FiTruck, FiCpu, FiMonitor, FiUsers } from 'react-icons/fi';
 
 const renderDetalles = (detalles) => {
@@ -18,6 +19,8 @@ const renderDetalles = (detalles) => {
 };
 
 function ProveedorCard({ proveedorInfo, onEdit, onDelete, onContactClick }) {
+  const { user } = useAuth();
+
   const getIcon = (categoria) => {
     switch (categoria?.toLowerCase()) {
       case 'comunicaciones': return <FiBox className="h-6 w-6 text-white" />;
@@ -43,14 +46,17 @@ function ProveedorCard({ proveedorInfo, onEdit, onDelete, onContactClick }) {
             {subTitulo && <p className="text-sm text-slate-500">Prov: {subTitulo}</p>}
           </div>
         </div>
+        
         <div className="flex gap-2">
-          <button onClick={() => onEdit(proveedorInfo)} className="p-2 text-slate-500 hover:text-blue-600" title="Editar"><FiEdit /></button>
-          <button onClick={() => onDelete(proveedorInfo)} className="p-2 text-slate-500 hover:text-red-600" title="Desvincular"><FiTrash2 /></button>
+          {user.rol !== 'Usuario' && onEdit && (
+            <button onClick={() => onEdit(proveedorInfo)} className="p-2 text-slate-500 hover:text-blue-600" title="Editar"><FiEdit /></button>
+          )}
+          {user.rol === 'Administrador' && onDelete && (
+            <button onClick={() => onDelete(proveedorInfo)} className="p-2 text-slate-500 hover:text-red-600" title="Desvincular"><FiTrash2 /></button>
+          )}
         </div>
       </div>
       
-      {/* --- CÓDIGO CORREGIDO Y FINAL --- */}
-      {/* Nos aseguramos de que aplicacion_contactos es un array antes de mapearlo */}
       {Array.isArray(proveedorInfo.aplicacion_contactos) && proveedorInfo.aplicacion_contactos.length > 0 && (
         <div className="mt-3 pt-3 border-t border-slate-200">
            <div className="flex items-start text-sm">

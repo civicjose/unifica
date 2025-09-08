@@ -5,18 +5,15 @@ import EditUserModal from '../components/modals/EditUserModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import UsersTable from '../components/users/UsersTable';
 import UserCard from '../components/users/UserCard';
-import userService from '../services/userService';
+import apiService from '../services/apiService'; // <-- Se usa el servicio centralizado
 import { useAuth } from '../context/AuthContext';
 import { FiSearch } from 'react-icons/fi';
 
 function UsersPage() {
-  // Estados para los modales
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
-
-  // Estados para los datos y la UI
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,17 +21,26 @@ function UsersPage() {
 
   const { token, user: currentUser } = useAuth();
 
-  useEffect(() => {
-    if (token) {
+  const refreshUsers = async () => {
+    if (!token) return;
+    try {
       setLoading(true);
-      userService.getUsers(token)
-        .then(data => setUsers(data))
-        .catch(error => toast.error(error.response?.data?.message || "No se pudieron cargar los usuarios."))
-        .finally(() => setLoading(false));
+      const response = await apiService.getUsers(token);
+      // ¡CORRECCIÓN CLAVE! Accedemos a response.data para obtener el array
+      setUsers(response.data); 
+    } catch (error) {
+      toast.error(error.response?.data?.message || "No se pudieron cargar los usuarios.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    refreshUsers();
   }, [token]);
 
   const sortedAndFilteredUsers = useMemo(() => {
+    // Esta línea ahora es segura porque 'users' siempre será un array
     let filteredUsers = [...users];
 
     if (searchTerm) {
@@ -57,25 +63,13 @@ function UsersPage() {
     }
     return filteredUsers;
   }, [users, searchTerm, sortConfig]);
-
+  
   const requestSort = (key) => {
     let direction = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
     }
     setSortConfig({ key, direction });
-  };
-
-  const refreshUsers = async () => {
-    try {
-      setLoading(true);
-      const data = await userService.getUsers(token);
-      setUsers(data);
-    } catch (error) {
-      toast.error("No se pudo refrescar la lista de usuarios.");
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleUserAdded = () => { setIsAddModalOpen(false); refreshUsers(); };
@@ -88,12 +82,14 @@ function UsersPage() {
     }
     setUserToDelete(user);
   };
+
   const handleConfirmDelete = async () => {
     if (!userToDelete) return;
     try {
-      await userService.deleteUser(userToDelete.id, token);
+      await apiService.deleteUser(userToDelete.id, token);
       toast.success(`Usuario '${userToDelete.nombre_completo}' eliminado.`);
-      setUsers(users.filter((u) => u.id !== userToDelete.id));
+      // Actualizamos el estado local para una respuesta más rápida de la UI
+      setUsers(users.filter((u) => u.id !== userToDelete.id)); 
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al eliminar el usuario.');
     } finally {

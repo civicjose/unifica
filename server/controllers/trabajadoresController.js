@@ -211,82 +211,122 @@ const deleteTrabajador = async (req, res) => {
 };
 
 const importTrabajadores = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
-  }
-
-  const fileContent = req.file.buffer.toString('utf-8');
-  const conn = await pool.getConnection();
-
-  try {
-    const results = Papa.parse(fileContent, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header) => header.trim().replace(/^\uFEFF/, ''),
-      delimiter: ",",
-    });
-    
-    if (results.errors.some(e => e.code === 'MissingHeader')) {
-        throw new Error('El delimitador del CSV es incorrecto. Por favor, usa punto y coma (;) como separador.');
+    if (!req.file) {
+        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
     }
 
-    await conn.beginTransaction();
+    const fileContent = req.file.buffer.toString('utf-8');
+    const conn = await pool.getConnection();
 
-    for (const [index, row] of results.data.entries()) {
-      const rowNumber = index + 2;
-
-      if (!row.puesto) {
-        throw new Error(`El campo 'puesto' está vacío o la cabecera es incorrecta en la fila ${rowNumber}.`);
-      }
-      const [puesto] = await conn.query('SELECT id FROM puestos WHERE nombre_puesto = ?', [row.puesto]);
-      if (puesto.length === 0) throw new Error(`El puesto '${row.puesto}' no existe. Fila ${rowNumber} del CSV.`);
-      const puesto_id = puesto[0].id;
-
-      let sede_id = null;
-      let centro_id = null;
-      if (row.ubicacion) {
-        const [sede] = await conn.query('SELECT id FROM sedes WHERE nombre_sede = ?', [row.ubicacion]);
-        if (sede.length > 0) {
-          sede_id = sede[0].id;
-        } else {
-          const [centro] = await conn.query('SELECT id FROM centros WHERE nombre_centro = ?', [row.ubicacion]);
-          if (centro.length > 0) {
-            centro_id = centro[0].id;
-          } else {
-            throw new Error(`La ubicación '${row.ubicacion}' no existe como Sede ni como Centro. Fila ${rowNumber} del CSV.`);
-          }
+    try {
+        const results = Papa.parse(fileContent, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader: (header) => header.trim().replace(/^\uFEFF/, ''),
+            delimiter: ";", // Asegúrate de que tu CSV usa comas
+        });
+        
+        // Error mejorado y coherente con el delimitador usado.
+        if (results.errors.some(e => e.code === 'MissingHeader' || results.data.length === 0)) {
+            throw new Error('El delimitador del CSV parece incorrecto o el archivo está mal formado. Por favor, revisa que las columnas estén separadas por comas (,).');
         }
-      }
 
-      let departamento_id = null;
-      if (sede_id && row.departamento) {
-        const [depto] = await conn.query('SELECT id FROM departamentos WHERE nombre = ?', [row.departamento]);
-        if (depto.length === 0) throw new Error(`El departamento '${row.departamento}' no existe. Fila ${rowNumber} del CSV.`);
-        departamento_id = depto[0].id;
-      } else if (!sede_id && row.departamento) {
-        throw new Error(`No se puede asignar un departamento a un trabajador que no pertenece a una sede. Fila ${rowNumber} del CSV.`);
-      }
-      
-      await conn.query(
-        `INSERT INTO trabajadores (nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, estado, fecha_alta, fecha_baja, observaciones) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          row.nombre, row.apellidos, row.email || null, row.telefono || null, puesto_id, sede_id, centro_id, departamento_id,
-          row.estado || 'Alta', row.fecha_alta || null, row.fecha_baja || null, row.observaciones || null
-        ]
-      );
+        await conn.beginTransaction();
+
+        for (const [index, row] of results.data.entries()) {
+            const rowNumber = index + 2; // +2 para contar la cabecera
+
+            // 1. Validar y obtener el puesto_id
+            if (!row.puesto || row.puesto.trim() === '') {
+                throw new Error(`El campo 'puesto' está vacío en la fila ${rowNumber}.`);
+            }
+            const [puesto] = await conn.query('SELECT id FROM puestos WHERE nombre_puesto = ?', [row.puesto.trim()]);
+            if (puesto.length === 0) {
+                throw new Error(`El puesto '${row.puesto}' no existe en la base de datos. Fila ${rowNumber} del CSV.`);
+            }
+            const puesto_id = puesto[0].id;
+
+            // 2. Validar y obtener sede_id o centro_id
+            let sede_id = null;
+            let centro_id = null;
+            if (row.ubicacion && row.ubicacion.trim() !== '') {
+                const ubicacion = row.ubicacion.trim();
+                const [sede] = await conn.query('SELECT id FROM sedes WHERE nombre_sede = ?', [ubicacion]);
+                if (sede.length > 0) {
+                    sede_id = sede[0].id;
+                } else {
+                    const [centro] = await conn.query('SELECT id FROM centros WHERE nombre_centro = ?', [ubicacion]);
+                    if (centro.length > 0) {
+                        centro_id = centro[0].id;
+                    } else {
+                        // Opcional: podrías decidir no lanzar un error y simplemente dejar la ubicación en null con un warning.
+                        // Por ahora, mantenemos la validación estricta.
+                        throw new Error(`La ubicación '${ubicacion}' no existe como Sede ni como Centro. Fila ${rowNumber} del CSV.`);
+                    }
+                }
+            }
+
+            // 3. Validar y obtener departamento_id (LÓGICA CORREGIDA)
+            // Se busca el departamento si existe en el CSV, sin depender de si hay una sede.
+            let departamento_id = null;
+            if (row.departamento && row.departamento.trim() !== '') {
+                const departamento = row.departamento.trim();
+                const [depto] = await conn.query('SELECT id FROM departamentos WHERE nombre = ?', [departamento]);
+                if (depto.length === 0) {
+                    throw new Error(`El departamento '${departamento}' no existe en la base de datos. Fila ${rowNumber} del CSV.`);
+                }
+                departamento_id = depto[0].id;
+            }
+            
+            // 4. Lógica de Inserción o Actualización (UPSERT)
+            // Si el email ya existe, actualiza el registro. Si no, lo inserta.
+            // Esto evita errores de clave única 'email'.
+            const email = row.email && row.email.trim() !== '' ? row.email.trim() : null;
+            if (!email) {
+                // Si se requiere email, se puede lanzar un error. Si no, se puede insertar sin él.
+                // Asumimos que un trabajador puede no tener email por ahora.
+            }
+
+            const values = {
+                nombre: row.nombre,
+                apellidos: row.apellidos,
+                email: email,
+                telefono: row.telefono || null,
+                puesto_id: puesto_id,
+                sede_id: sede_id,
+                centro_id: centro_id,
+                departamento_id: departamento_id,
+                estado: row.estado || 'Alta',
+                fecha_alta: row.fecha_alta || null,
+                fecha_baja: row.fecha_baja || null,
+                observaciones: row.observaciones || null
+            };
+
+            // Se usa INSERT ... ON DUPLICATE KEY UPDATE para manejar emails existentes.
+            // El email debe ser una clave UNIQUE en tu tabla para que esto funcione.
+            await conn.query(
+              `INSERT INTO trabajadores (nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, estado, fecha_alta, fecha_baja, observaciones) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               ON DUPLICATE KEY UPDATE
+               nombre=VALUES(nombre), apellidos=VALUES(apellidos), telefono=VALUES(telefono), puesto_id=VALUES(puesto_id),
+               sede_id=VALUES(sede_id), centro_id=VALUES(centro_id), departamento_id=VALUES(departamento_id), estado=VALUES(estado),
+               fecha_alta=VALUES(fecha_alta), fecha_baja=VALUES(fecha_baja), observaciones=VALUES(observaciones)`,
+              [...Object.values(values)]
+            );
+        }
+
+        await conn.commit();
+        res.json({ message: `${results.data.length} trabajadores importados o actualizados con éxito.` });
+
+    } catch (error) {
+        await conn.rollback();
+        // Es buena práctica loguear el error completo en el servidor.
+        console.error('Error durante la importación de trabajadores:', error);
+        // Y enviar un mensaje claro al cliente.
+        res.status(400).json({ message: error.message || 'Error en la importación. Ningún dato fue guardado.' });
+    } finally {
+        if (conn) conn.release();
     }
-
-    await conn.commit();
-    res.json({ message: `${results.data.length} trabajadores importados con éxito.` });
-
-  } catch (error) {
-    await conn.rollback();
-    console.error('Error durante la importación:', error);
-    res.status(400).json({ message: error.message || 'Error en la importación. Ningún dato fue guardado.' });
-  } finally {
-    conn.release();
-  }
 };
 
 const getDirectoresDeCentro = async (req, res) => {

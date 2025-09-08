@@ -15,31 +15,23 @@ import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// --- Rutas Principales de Proveedores ---
 router.route('/')
-  .all(protect, authorize('Administrador'))
-  .get(getAllProveedores)
-  .post(createProveedor);
+  .get(protect, getAllProveedores)
+  .post(protect, authorize('Administrador', 'Técnico'), createProveedor);
 
 router.route('/:id')
-  .all(protect, authorize('Administrador'))
-  .get(getProveedorById)
-  .put(updateProveedor)
-  .delete(deleteProveedor);
+  .get(protect, getProveedorById)
+  .put(protect, authorize('Administrador', 'Técnico'), updateProveedor)
+  .delete(protect, authorize('Administrador'), deleteProveedor);
   
-// --- Rutas para los Contactos de un Proveedor ---
 router.route('/:proveedorId/contactos')
-  .all(protect, authorize('Administrador'))
-  .get(getContactsByProvider)
-  .post(createContact);
+  .get(protect, getContactsByProvider)
+  .post(protect, authorize('Administrador', 'Técnico'), createContact);
 
-// --- Rutas para gestionar un Contacto específico por su ID ---
 router.route('/contactos/:id')
-  .all(protect, authorize('Administrador'))
-  .put(updateContact)
-  .delete(deleteContact);
+  .put(protect, authorize('Administrador', 'Técnico'), updateContact)
+  .delete(protect, authorize('Administrador'), deleteContact);
 
-// --- Ruta para obtener los vínculos de un proveedor ---
-router.get('/:id/vinculos', protect, authorize('Administrador'), getVinculosByProvider);
+router.get('/:id/vinculos', protect, getVinculosByProvider);
 
 export default router;

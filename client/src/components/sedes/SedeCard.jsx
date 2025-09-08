@@ -8,7 +8,6 @@ function SedeCard({ sede, onEdit, onDelete }) {
 
   return (
     <div className="flex flex-col rounded-xl border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-      {/* El enlace ahora envuelve la parte principal de la tarjeta */}
       <Link to={`/sedes/${sede.id}`} className="flex-grow p-6 block">
         <h3 className="text-xl font-bold text-secondary truncate">{sede.nombre_sede}</h3>
         <div className="mt-2 flex items-center text-sm text-slate-500">
@@ -21,12 +20,14 @@ function SedeCard({ sede, onEdit, onDelete }) {
         <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
           {sede.territorio_codigo || 'DT no asignado'}
         </span>
-        {user.rol === 'Administrador' && (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
+          {['Administrador', 'Técnico'].includes(user.rol) && (
             <button onClick={() => onEdit(sede)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Sede"><FiEdit2 /></button>
+          )}
+          {user.rol === 'Administrador' && (
             <button onClick={() => onDelete(sede)} className="p-2 text-red-600 hover:bg-red-100 rounded-full" title="Eliminar Sede"><FiTrash2 /></button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

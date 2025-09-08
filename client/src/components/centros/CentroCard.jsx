@@ -20,18 +20,19 @@ function CentroCard({ centro, onEdit, onDelete }) {
         </div>
       </Link>
       
-      {/* Botones de Admin */}
-      {user.rol === 'Administrador' && (
-        <div className="flex justify-between items-center border-t p-4">
-           <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              {centro.territorio_codigo || 'DT no asignado'}
-            </span>
-          <div className="flex gap-2">
+      <div className="flex justify-between items-center border-t p-4">
+        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            {centro.territorio_codigo || 'DT no asignado'}
+        </span>
+        <div className="flex gap-2">
+          {['Administrador', 'Técnico'].includes(user.rol) && (
             <button onClick={() => onEdit(centro)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full"><FiEdit2 /></button>
+          )}
+          {user.rol === 'Administrador' && (
             <button onClick={() => onDelete(centro)} className="p-2 text-red-600 hover:bg-red-100 rounded-full"><FiTrash2 /></button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

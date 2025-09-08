@@ -10,7 +10,7 @@ import ConfirmModal from '../modals/ConfirmModal';
 function ProveedorAplicaciones({ proveedor, contactos }) {
   const [aplicaciones, setAplicaciones] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [isAppModalOpen, setIsAppModalOpen] = useState(false);
   const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
@@ -61,18 +61,21 @@ function ProveedorAplicaciones({ proveedor, contactos }) {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <button onClick={handleOpenAddModal} className="flex items-center gap-2 rounded-full bg-primary text-white px-4 py-2 text-sm font-bold shadow-md">
-          <FiPlus /> Añadir Aplicación
-        </button>
-      </div>
+      {['Administrador', 'Técnico'].includes(user.rol) && (
+        <div className="flex justify-end mb-4">
+          <button onClick={handleOpenAddModal} className="flex items-center gap-2 rounded-full bg-primary text-white px-4 py-2 text-sm font-bold shadow-md">
+            <FiPlus /> Añadir Aplicación
+          </button>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-500">Aplicación y Contactos Responsables</th>
-              <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-500">Acciones</th>
-            </tr>
+              {user.rol !== 'Usuario' && (
+                <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-500">Acciones</th>
+              )}            </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
             {loading ? (
@@ -82,7 +85,6 @@ function ProveedorAplicaciones({ proveedor, contactos }) {
                 <tr key={app.id}>
                   <td className="px-4 py-3 align-top">
                     <p className="font-semibold text-secondary text-base">{app.nombre_aplicacion}</p>
-                    {/* ***** CORRECCIÓN AQUÍ ***** */}
                     <div className="mt-2 space-y-1">
                       {app.contactos_asignados && app.contactos_asignados.length > 0 ? (
                         app.contactos_asignados.map(contacto => (
@@ -96,11 +98,19 @@ function ProveedorAplicaciones({ proveedor, contactos }) {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right align-top">
-                    <button onClick={() => handleContactsClick(app)} className="text-green-600 p-2" title="Asignar Contactos"><FiUsers /></button>
-                    <button onClick={() => handleEditClick(app)} className="text-blue-600 p-2" title="Editar Aplicación"><FiEdit2 /></button>
-                    <button onClick={() => handleDeleteClick(app)} className="text-red-600 p-2" title="Eliminar Aplicación"><FiTrash2 /></button>
-                  </td>
+                  {user.rol !== 'Usuario' && (
+                    <td className="px-4 py-3 text-right align-top">
+                      {['Administrador', 'Técnico'].includes(user.rol) && (
+                        <>
+                          <button onClick={() => handleContactsClick(app)} className="text-green-600 p-2" title="Asignar Contactos"><FiUsers /></button>
+                          <button onClick={() => handleEditClick(app)} className="text-blue-600 p-2" title="Editar Aplicación"><FiEdit2 /></button>
+                        </>
+                      )}
+                      {user.rol === 'Administrador' && (
+                        <button onClick={() => handleDeleteClick(app)} className="text-red-600 p-2" title="Eliminar Aplicación"><FiTrash2 /></button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))
             )}

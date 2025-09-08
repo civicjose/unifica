@@ -10,7 +10,6 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 import CentroModal from '../components/modals/CentroModal';
 import ContactoDetailModal from '../components/modals/ContactoDetailModal';
 
-// Componente para mostrar un bloque de información
 const InfoBlock = ({ title, children, onEdit }) => (
   <div className="bg-white p-6 rounded-xl border shadow-sm h-full">
     <div className="flex justify-between items-center border-b pb-2 mb-4">
@@ -25,7 +24,6 @@ const InfoBlock = ({ title, children, onEdit }) => (
   </div>
 );
 
-// Componente para mostrar una línea de detalle (campo y valor)
 const DetailRow = ({ label, children }) => (
   <div>
     <p className="text-sm font-semibold text-slate-500">{label}</p>
@@ -37,7 +35,7 @@ function CentroDetailPage() {
   const { id } = useParams();
   const { token, user } = useAuth();
   const [centro, setCentro] = useState(null);
-  const [directores, setDirectores] = useState([]); // Estado para los directores
+  const [directores, setDirectores] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false);
@@ -53,15 +51,7 @@ function CentroDetailPage() {
     if (token && id) {
       setLoading(true);
       try {
-        const [
-          centroRes, 
-          directoresRes, // Se carga la lista de directores para este centro
-          provRes, 
-          appRes, 
-          terrRes, 
-          tiposRes, 
-          catRes
-        ] = await Promise.all([
+        const [ centroRes, directoresRes, provRes, appRes, terrRes, tiposRes, catRes ] = await Promise.all([
           apiService.getCentroDetails(id, token),
           apiService.getDirectoresByCentro(id, token), 
           apiService.getProveedores(token),
@@ -72,7 +62,7 @@ function CentroDetailPage() {
         ]);
 
         setCentro(centroRes.data);
-        setDirectores(directoresRes.data); // Se guardan los directores en el estado
+        setDirectores(directoresRes.data);
         setProveedores(provRes.data);
         setAplicaciones(appRes.data);
         setListas({ 
@@ -115,7 +105,7 @@ function CentroDetailPage() {
     const baseUrl = 'https://sistemas.macrosad.com/front/computer.php';
     const params = new URLSearchParams({
       is_deleted: '0', as_map: '0', browse: '0',
-      'criteria[0][link]': 'AND', 'criteria[0][field]': '12',
+      'criteria[0][link]': 'AND', 'criteria[0][field]': '3',
       'criteria[0][searchtype]': 'contains', 'criteria[0][value]': centro.nombre_centro,
       itemtype: 'Computer',
     });
@@ -132,7 +122,7 @@ function CentroDetailPage() {
           <Link to="/centros" className="flex items-center gap-2 text-primary font-semibold hover:underline">
             <FiArrowLeft /> Volver a la lista de centros
           </Link>
-          {user.rol === 'Administrador' && (
+          {['Administrador', 'Técnico'].includes(user.rol) && (
             <button onClick={() => setIsCentroModalOpen(true)} className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700">
               <FiEdit /> Editar Centro
             </button>
@@ -177,7 +167,7 @@ function CentroDetailPage() {
             <div className="bg-white p-6 rounded-xl border shadow-sm">
                 <div className="flex items-center justify-between border-b pb-2 mb-4">
                     <h3 className="text-lg font-bold text-secondary">Proveedores Contratados</h3>
-                    {user.rol === 'Administrador' && (
+                    {['Administrador', 'Técnico'].includes(user.rol) && (
                       <button onClick={handleOpenAddProveedorModal} className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-primary/90">
                           <FiPlus /> Añadir Proveedor
                       </button>
@@ -189,8 +179,8 @@ function CentroDetailPage() {
                       <ProveedorCard 
                         key={proveedorInfo.id} 
                         proveedorInfo={proveedorInfo}
-                        onEdit={handleOpenEditProveedorModal}
-                        onDelete={handleDeleteProveedorClick}
+                        onEdit={['Administrador', 'Técnico'].includes(user.rol) ? handleOpenEditProveedorModal : undefined}
+                        onDelete={user.rol === 'Administrador' ? handleDeleteProveedorClick : undefined}
                         onContactClick={handleContactClick}
                       />
                     ))

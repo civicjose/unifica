@@ -4,14 +4,25 @@ import toast from 'react-hot-toast';
 const API_URL = 'http://localhost:4000/api';
 //const API_URL = '/api';
 
+// Variable para controlar si ya se está gestionando una caducidad de sesión
+let isHandlingSessionExpiration = false;
+
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('user');
+    // Comprobamos si el error es un 401 y si no lo estamos gestionando ya
+    if (error.response && error.response.status === 401 && !isHandlingSessionExpiration) {
+      // Marcamos que estamos gestionando el error para evitar bucles
+      isHandlingSessionExpiration = true;
+      
+      localStorage.removeItem('token');
+      
       toast.error('Tu sesión ha caducado. Por favor, inicia sesión de nuevo.');
+      
+      // Redirigimos a la página de login
       window.location.replace('/#/'); 
     }
+    
     return Promise.reject(error);
   }
 );
@@ -20,8 +31,30 @@ const getConfig = (token) => ({
   headers: { Authorization: `Bearer ${token}` },
 });
 
+// --- Auth & Users ---
+const createUser = (userData, token) => axios.post(`${API_URL}/auth/register`, userData, getConfig(token));
+const getUsers = (token) => axios.get(`${API_URL}/users`, getConfig(token));
+const updateUser = (id, userData, token) => axios.put(`${API_URL}/users/${id}`, userData, getConfig(token));
+const deleteUser = (id, token) => axios.delete(`${API_URL}/users/${id}`, getConfig(token));
+
 // --- Trabajadores ---
-const getAllTrabajadores = (token) => axios.get(`${API_URL}/trabajadores`, getConfig(token));
+const getAllTrabajadores = (token, filters = {}) => {
+  const sedes = filters.ubicaciones?.filter(u => u.startsWith('sede-')).map(u => u.replace('sede-', ''));
+  const centros = filters.ubicaciones?.filter(u => u.startsWith('centro-')).map(u => u.replace('centro-', ''));
+
+  const config = {
+    ...getConfig(token),
+    params: {
+      search: filters.search || undefined,
+      sedes: sedes?.join(',') || undefined,
+      centros: centros?.join(',') || undefined,
+      puestos: filters.puestos?.join(',') || undefined,
+      territorios: filters.territorios?.join(',') || undefined,
+      estado: filters.estado === 'Todos' ? undefined : filters.estado,
+    }
+  };
+  return axios.get(`${API_URL}/trabajadores`, config);
+};
 const createTrabajador = (data, token) => axios.post(`${API_URL}/trabajadores`, data, getConfig(token));
 const updateTrabajador = (id, data, token) => axios.put(`${API_URL}/trabajadores/${id}`, data, getConfig(token));
 const deleteTrabajador = (id, token) => axios.delete(`${API_URL}/trabajadores/${id}`, getConfig(token));
@@ -44,19 +77,19 @@ const getTiposCentro = (token) => axios.get(`${API_URL}/tipos-centro`, getConfig
 const createPuesto = (data, token) => axios.post(`${API_URL}/puestos`, data, getConfig(token));
 const updatePuesto = (id, data, token) => axios.put(`${API_URL}/puestos/${id}`, data, getConfig(token));
 const deletePuesto = (id, token) => axios.delete(`${API_URL}/puestos/${id}`, getConfig(token));
-
 const createDepartamento = (data, token) => axios.post(`${API_URL}/departamentos`, data, getConfig(token));
 const updateDepartamento = (id, data, token) => axios.put(`${API_URL}/departamentos/${id}`, data, getConfig(token));
 const deleteDepartamento = (id, token) => axios.delete(`${API_URL}/departamentos/${id}`, getConfig(token));
-
 const createTerritorio = (data, token) => axios.post(`${API_URL}/territorios`, data, getConfig(token));
 const updateTerritorio = (id, data, token) => axios.put(`${API_URL}/territorios/${id}`, data, getConfig(token));
 const deleteTerritorio = (id, token) => axios.delete(`${API_URL}/territorios/${id}`, getConfig(token));
-
 const getCategoriasProveedor = (token) => axios.get(`${API_URL}/categorias-proveedor`, getConfig(token));
 const createCategoriaProveedor = (data, token) => axios.post(`${API_URL}/categorias-proveedor`, data, getConfig(token));
 const updateCategoriaProveedor = (id, data, token) => axios.put(`${API_URL}/categorias-proveedor/${id}`, data, getConfig(token));
 const deleteCategoriaProveedor = (id, token) => axios.delete(`${API_URL}/categorias-proveedor/${id}`, getConfig(token));
+const createTipoCentro = (data, token) => axios.post(`${API_URL}/tipos-centro`, data, getConfig(token));
+const updateTipoCentro = (id, data, token) => axios.put(`${API_URL}/tipos-centro/${id}`, data, getConfig(token));
+const deleteTipoCentro = (id, token) => axios.delete(`${API_URL}/tipos-centro/${id}`, getConfig(token));
 
 // --- Proveedores ---
 const getProveedores = (token) => axios.get(`${API_URL}/proveedores`, getConfig(token));
@@ -86,7 +119,7 @@ const getCentroDetails = (id, token) => axios.get(`${API_URL}/centros/${id}/deta
 const createCentro = (data, token) => axios.post(`${API_URL}/centros`, data, getConfig(token));
 const updateCentro = (id, data, token) => axios.put(`${API_URL}/centros/${id}`, data, getConfig(token));
 const deleteCentro = (id, token) => axios.delete(`${API_URL}/centros/${id}`, getConfig(token));
-const getDirectoresByCentro = (id, token) => axios.get(`${API_URL}/centros/${id}/directores`, getConfig(token)); // <-- Nueva función
+const getDirectoresByCentro = (id, token) => axios.get(`${API_URL}/centros/${id}/directores`, getConfig(token));
 
 // --- Sedes ---
 const getSedeDetails = (id, token) => axios.get(`${API_URL}/sedes/${id}/details`, getConfig(token));
@@ -109,22 +142,84 @@ const getDashboardStats = (token) => axios.get(`${API_URL}/dashboard/stats`, get
 // --- Búsqueda ---
 const globalSearch = (term, token) => axios.get(`${API_URL}/search/global`, { ...getConfig(token), params: { term } });
 
-
 const apiService = {
-  getAllTrabajadores, createTrabajador, updateTrabajador, deleteTrabajador, importTrabajadores,
-  getPuestos, getSedes, getCentros, getTerritorios, getDepartamentos, getTiposCentro,
-  createPuesto, updatePuesto, deletePuesto,
-  createDepartamento, updateDepartamento, deleteDepartamento,
-  createTerritorio, updateTerritorio, deleteTerritorio,
-  getCategoriasProveedor, createCategoriaProveedor, updateCategoriaProveedor, deleteCategoriaProveedor,
-  getProveedores, getProveedorById, createProveedor, updateProveedor, deleteProveedor, getVinculosByProvider,
-  getContactsByProvider, createContact, updateContact, deleteContact,
-  getAplicaciones, getAplicacionesByProveedor, createAplicacion, updateAplicacion, deleteAplicacion, getAplicacionContactos, setAplicacionContactos,
-  getCentroDetails, createCentro, updateCentro, deleteCentro, getDirectoresByCentro,
-  getSedeDetails, getSedeById, createSede, updateSede, deleteSede,
-  addProveedorToCentro, updateProveedorInCentro, deleteProveedorFromCentro,
-  addProveedorToSede, updateProveedorInSede, deleteProveedorFromSede,
+  // Auth & Users
+  createUser,
+  getUsers,
+  updateUser,
+  deleteUser,
+  // Trabajadores
+  getAllTrabajadores,
+  createTrabajador,
+  updateTrabajador,
+  deleteTrabajador,
+  importTrabajadores,
+  // Listas
+  getPuestos,
+  getSedes,
+  getCentros,
+  getTerritorios,
+  getDepartamentos,
+  getTiposCentro,
+  // CRUDs Configuración
+  createPuesto,
+  updatePuesto,
+  deletePuesto,
+  createDepartamento,
+  updateDepartamento,
+  deleteDepartamento,
+  createTerritorio,
+  updateTerritorio,
+  deleteTerritorio,
+  getCategoriasProveedor,
+  createCategoriaProveedor,
+  updateCategoriaProveedor,
+  deleteCategoriaProveedor,
+  createTipoCentro,
+  updateTipoCentro,
+  deleteTipoCentro,
+  // Proveedores
+  getProveedores,
+  getProveedorById,
+  createProveedor,
+  updateProveedor,
+  deleteProveedor,
+  getVinculosByProvider,
+  // Contactos de Proveedores
+  getContactsByProvider,
+  createContact,
+  updateContact,
+  deleteContact,
+  // Aplicaciones
+  getAplicaciones,
+  getAplicacionesByProveedor,
+  createAplicacion,
+  updateAplicacion,
+  deleteAplicacion,
+  getAplicacionContactos,
+  setAplicacionContactos,
+  // Centros
+  getCentroDetails,
+  createCentro,
+  updateCentro,
+  deleteCentro,
+  getDirectoresByCentro,
+  // Sedes
+  getSedeDetails,
+  getSedeById,
+  createSede,
+  updateSede,
+  deleteSede,
+  // Vínculos de Proveedores
+  addProveedorToCentro,
+  updateProveedorInCentro,
+  deleteProveedorFromCentro,
+  addProveedorToSede,
+  updateProveedorInSede,
+  deleteProveedorFromSede,
+  // Dashboard
   getDashboardStats,
+  // Búsqueda
   globalSearch,
 };
 

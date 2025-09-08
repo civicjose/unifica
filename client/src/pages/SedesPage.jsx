@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import apiService from '../services/apiService';
 import { useAuth } from '../context/AuthContext';
@@ -12,12 +13,14 @@ function SedesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { token, user } = useAuth();
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [listas, setListas] = useState({ territorios: [] });
-  
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const loadData = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -35,8 +38,17 @@ function SedesPage() {
     }
   }, [token]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      setIsModalOpen(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+  
   const handleOpenAddModal = () => { setItemToEdit(null); setIsModalOpen(true); };
   const handleOpenEditModal = (sede) => {
     apiService.getSedeById(sede.id, token).then(res => {
@@ -71,7 +83,7 @@ function SedesPage() {
             <input type="text" placeholder="Buscar por nombre o localidad..." className="w-full rounded-full border bg-white py-2 pl-10 pr-4 shadow-sm sm:w-72" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          {user.rol === 'Administrador' && (
+          {['Administrador', 'Técnico'].includes(user.rol) && (
             <button onClick={handleOpenAddModal} className="flex-shrink-0 flex items-center gap-2 rounded-full bg-primary text-white px-4 py-2 text-sm font-bold shadow-md">
               <FiPlus /> Añadir Sede
             </button>

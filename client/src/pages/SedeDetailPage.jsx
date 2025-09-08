@@ -112,7 +112,7 @@ function SedeDetailPage() {
             <Link to="/sedes" className="flex items-center gap-2 text-primary font-semibold hover:underline">
                 <FiArrowLeft /> Volver a la lista de sedes
             </Link>
-            {user.rol === 'Administrador' && (
+            {['Administrador', 'Técnico'].includes(user.rol) && (
                 <button onClick={() => setIsSedeModalOpen(true)} className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700">
                     <FiEdit /> Editar Sede
                 </button>
@@ -121,7 +121,6 @@ function SedeDetailPage() {
         
         <h1 className="text-4xl font-bold text-gray-800">{sede.nombre_sede}</h1>
 
-        {/* ***** CORRECCIÓN AQUÍ: Se añade 'md:items-start' ***** */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:items-start">
           <div className="md:col-span-1 space-y-6">
             <InfoBlock title="Información General">
@@ -145,7 +144,7 @@ function SedeDetailPage() {
               <div className="bg-white p-6 rounded-xl border shadow-sm">
                   <div className="flex items-center justify-between border-b pb-2 mb-4">
                       <h3 className="text-lg font-bold text-secondary">Proveedores Contratados</h3>
-                      {user.rol === 'Administrador' && (
+                      {['Administrador', 'Técnico'].includes(user.rol) && (
                         <button onClick={handleOpenAddProveedorModal} className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-primary/90">
                             <FiPlus /> Añadir Proveedor
                         </button>
@@ -157,8 +156,8 @@ function SedeDetailPage() {
                         <ProveedorCard 
                           key={proveedorInfo.id} 
                           proveedorInfo={proveedorInfo}
-                          onEdit={handleOpenEditProveedorModal}
-                          onDelete={handleDeleteProveedorClick}
+                          onEdit={['Administrador', 'Técnico'].includes(user.rol) ? handleOpenEditProveedorModal : undefined}
+                          onDelete={user.rol === 'Administrador' ? handleDeleteProveedorClick : undefined}
                           onContactClick={handleContactClick}
                         />
                       ))

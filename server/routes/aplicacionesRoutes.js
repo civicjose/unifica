@@ -1,23 +1,22 @@
 import express from 'express';
-import { getAllAplicaciones, createAplicacion, updateAplicacion, 
-        deleteAplicacion, getAplicacionContactos, setAplicacionContactos } from '../controllers/aplicacionesController.js';
+import { 
+  getAllAplicaciones, createAplicacion, updateAplicacion, 
+  deleteAplicacion, getAplicacionContactos, setAplicacionContactos 
+} from '../controllers/aplicacionesController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect, authorize('Administrador'));
-
 router.route('/')
-  .get(getAllAplicaciones)
-  .post(createAplicacion);
+  .get(protect, getAllAplicaciones)
+  .post(protect, authorize('Administrador', 'Técnico'), createAplicacion);
 
 router.route('/:id')
-  .put(updateAplicacion)
-  .delete(deleteAplicacion);
+  .put(protect, authorize('Administrador', 'Técnico'), updateAplicacion)
+  .delete(protect, authorize('Administrador'), deleteAplicacion);
 
-  router.route('/:id/contactos')
-  .all(protect, authorize('Administrador'))
-  .get(getAplicacionContactos)
-  .put(setAplicacionContactos);
+router.route('/:id/contactos')
+  .get(protect, getAplicacionContactos)
+  .put(protect, authorize('Administrador', 'Técnico'), setAplicacionContactos);
 
 export default router;

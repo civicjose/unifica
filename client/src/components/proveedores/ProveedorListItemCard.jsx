@@ -20,11 +20,16 @@ function ProveedorListItemCard({ proveedor, onEdit, onDelete }) {
         </div>
       </Link>
       
-      {user.rol === 'Administrador' && (
+
+      {user.rol !== 'Usuario' && (
         <div className="flex justify-end items-center border-t p-4">
           <div className="flex gap-2">
-            <button onClick={() => onEdit(proveedor)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Proveedor"><FiEdit2 /></button>
-            <button onClick={() => onDelete(proveedor)} className="p-2 text-red-600 hover:bg-red-100 rounded-full" title="Eliminar Proveedor"><FiTrash2 /></button>
+            {['Administrador', 'Técnico'].includes(user.rol) && (
+              <button onClick={() => onEdit(proveedor)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Proveedor"><FiEdit2 /></button>
+            )}
+            {user.rol === 'Administrador' && (
+              <button onClick={() => onDelete(proveedor)} className="p-2 text-red-600 hover:bg-red-100 rounded-full" title="Eliminar Proveedor"><FiTrash2 /></button>
+            )}
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiTrash2, FiEdit2, FiArrowUp, FiArrowDown, FiMoreVertical } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
 
 const SortIcon = ({ direction }) => {
   if (direction === 'ascending') return <FiArrowUp className="ml-1 inline" size={14} />;
@@ -16,6 +17,7 @@ const getInitials = (name = '') => {
 function TrabajadoresTable({ trabajadores, onViewDetails, onEditClick, onDeleteClick, requestSort, sortConfig }) {
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -53,7 +55,9 @@ function TrabajadoresTable({ trabajadores, onViewDetails, onEditClick, onDeleteC
             <SortableHeader field="puesto" label="Puesto" />
             <SortableHeader field="ubicacion" label="Ubicación" />
             <SortableHeader field="estado" label="Estado" />
-            <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Acciones</th>
+            {user.rol !== 'Usuario' && (
+              <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Acciones</th>
+            )}
           </tr>
         </thead>
         <tbody className="bg-white">
@@ -81,6 +85,7 @@ function TrabajadoresTable({ trabajadores, onViewDetails, onEditClick, onDeleteC
                     {trabajador.estado}
                   </span>
                 </td>
+                {user.rol !== 'Usuario' && (
                 <td onClick={(e) => e.stopPropagation()} className="whitespace-nowrap px-6 py-4 text-right">
                   <div className="relative inline-block text-left" ref={openMenuId === trabajador.id ? menuRef : null}>
                     <button onClick={() => handleMenuToggle(trabajador.id)} className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-200">
@@ -93,14 +98,17 @@ function TrabajadoresTable({ trabajadores, onViewDetails, onEditClick, onDeleteC
                           <button onClick={() => { onEditClick(trabajador); setOpenMenuId(null); }} className="flex w-full items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
                             <FiEdit2 className="mr-3" /> Editar
                           </button>
-                          <button onClick={() => { onDeleteClick(trabajador); setOpenMenuId(null); }} className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
-                            <FiTrash2 className="mr-3" /> Eliminar
-                          </button>
+                          {user.rol === 'Administrador' && (
+                            <button onClick={() => { onDeleteClick(trabajador); setOpenMenuId(null); }} className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
+                              <FiTrash2 className="mr-3" /> Eliminar
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
                   </div>
                 </td>
+                )}
               </tr>
             );
           })}
