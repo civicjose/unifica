@@ -1,36 +1,51 @@
 import pool from '../config/database.js';
-import axios from 'axios'; // <-- 1. Importar axios
+import axios from 'axios';
 
-// --- FUNCIÓN DE GEOCODIFICACIÓN USANDO AXIOS ---
+// --- FUNCIÓN MEJORADA PARA "LIMPIAR" LA DIRECCIÓN ---
+const cleanAddressForGeocoding = (address) => {
+  // 1. Elimina palabras clave comunes de piso/puerta y lo que les sigue.
+  let cleaned = address.replace(/\s(piso|planta|puerta|local|escalera|bajo|esc|pta|pl)\.?\s?([\w-]+)?/gi, '');
+  
+  // 2. Elimina patrones como ", 5B", ", 1A", ", 4" que suelen ir después del número.
+  cleaned = cleaned.replace(/,\s*\d+[a-zA-Z]?\b/g, '');
+  
+  // 3. Como último recurso, si aún hay varias comas, nos quedamos con las dos primeras partes.
+  const parts = cleaned.split(',');
+  if (parts.length > 2) {
+      cleaned = `${parts[0]}, ${parts[1]}`;
+  }
+
+  return cleaned.trim();
+};
+
 const geocodeAddress = (address) => {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=jsonv2&limit=1`;
+  const cleanedAddress = cleanAddressForGeocoding(address);
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanedAddress)}&format=jsonv2&limit=1`;
   
   console.log(`[GEOCODING] Consultando URL con axios: ${url}`);
 
   return axios.get(url, {
-    headers: {
-      'User-Agent': 'UnificaApp/1.0 (Contacto: jose.civico@macrosad.com)'
-    },
-    timeout: 7000 // Timeout de 7 segundos
+    headers: { 'User-Agent': 'UnificaApp/1.0 (Contacto: jose.civico@macrosad.com)' },
+    timeout: 7000
   })
   .then(response => {
     if (response.data && response.data.length > 0) {
       const result = response.data[0];
       const coords = { lat: parseFloat(result.lat), lon: parseFloat(result.lon) };
-      console.log(`[GEOCODING] ÉXITO para "${address}":`, coords);
+      console.log(`[GEOCODING] ÉXITO para "${cleanedAddress}":`, coords);
       return coords;
     } else {
-      console.log(`[GEOCODING] FALLO para "${address}": Nominatim no devolvió resultados.`);
+      console.log(`[GEOCODING] FALLO para "${cleanedAddress}": Nominatim no devolvió resultados.`);
       return null;
     }
   })
   .catch(error => {
-    console.error(`[GEOCODING] ERROR en la petición para "${address}":`, error.message);
+    console.error(`[GEOCODING] ERROR en la petición para "${cleanedAddress}":`, error.message);
     return null;
   });
 };
 
-// --- GETTERS y DELETE (sin cambios) ---
+// --- GETTERS y DELETE ---
 export const getAllCentros = async (req, res) => {
     try {
       const query = `
@@ -61,7 +76,7 @@ export const getCentroDetails = async (req, res) => {
       const centroDetails = centros[0];
       const proveedoresQuery = `
         SELECT 
-          cp.id, cp.categoria, cp.detalles,
+          cp.id, cp.categoria, cp.detalles, cp.proveedor_id, cp.aplicacion_id,
           p.nombre_proveedor, p.url_proveedor,
           a.nombre_aplicacion,
           (SELECT JSON_ARRAYAGG(
