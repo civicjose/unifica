@@ -1,52 +1,48 @@
 import pool from '../config/database.js';
 import axios from 'axios';
 
-// --- FUNCIÓN MEJORADA PARA "LIMPIAR" LA DIRECCIÓN ---
 const cleanAddressForGeocoding = (address) => {
-  // 1. Elimina palabras clave comunes de piso/puerta y lo que les sigue.
   let cleaned = address.replace(/\s(piso|planta|puerta|local|escalera|bajo|esc|pta|pl)\.?\s?([\w-]+)?/gi, '');
-  
-  // 2. Elimina patrones como ", 5B", ", 1A", ", 4" que suelen ir después del número.
   cleaned = cleaned.replace(/,\s*\d+[a-zA-Z]?\b/g, '');
-  
-  // 3. Como último recurso, si aún hay varias comas, nos quedamos con las dos primeras partes.
   const parts = cleaned.split(',');
   if (parts.length > 2) {
       cleaned = `${parts[0]}, ${parts[1]}`;
   }
-
   return cleaned.trim();
 };
 
-const geocodeAddress = (address) => {
-  const cleanedAddress = cleanAddressForGeocoding(address);
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanedAddress)}&format=jsonv2&limit=1`;
+const geocodeAddress = async (addressData) => {
+  const { direccion, codigo_postal, localidad, provincia } = addressData;
+  const addressParts = [direccion, codigo_postal, localidad, provincia, 'España'].filter(Boolean);
+  const fullAddress = addressParts.join(', ');
+
+  if (!fullAddress) return null;
+
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fullAddress)}&format=jsonv2&limit=1`;
   
   console.log(`[GEOCODING] Consultando URL con axios: ${url}`);
 
-  return axios.get(url, {
-    headers: { 'User-Agent': 'UnificaApp/1.0 (Contacto: jose.civico@macrosad.com)' },
-    timeout: 7000
-  })
-  .then(response => {
+  try {
+    const response = await axios.get(url, {
+      headers: { 'User-Agent': 'UnificaApp/1.0 (Contacto: jose.civico@macrosad.com)' },
+      timeout: 7000
+    });
+
     if (response.data && response.data.length > 0) {
       const result = response.data[0];
       const coords = { lat: parseFloat(result.lat), lon: parseFloat(result.lon) };
-      console.log(`[GEOCODING] ÉXITO para "${cleanedAddress}":`, coords);
+      console.log(`[GEOCODING] ÉXITO para "${fullAddress}":`, coords);
       return coords;
     } else {
-      console.log(`[GEOCODING] FALLO para "${cleanedAddress}": Nominatim no devolvió resultados.`);
+      console.log(`[GEOCODING] FALLO para "${fullAddress}": Nominatim no devolvió resultados.`);
       return null;
     }
-  })
-  .catch(error => {
-    console.error(`[GEOCODING] ERROR en la petición para "${cleanedAddress}":`, error.message);
+  } catch (error) {
+    console.error(`[GEOCODING] ERROR en la petición para "${fullAddress}":`, error.message);
     return null;
-  });
+  }
 };
 
-
-// --- GETTERS y DELETE ---
 export const getAllSedes = async (req, res) => {
     try {
       const query = `
@@ -129,7 +125,6 @@ export const deleteSede = async (req, res) => {
     }
 };
 
-// --- CREATE ---
 export const createSede = async (req, res) => {
   const { nombre_sede, direccion, codigo_postal, localidad, provincia, telefono, territorio_id, observaciones, repositorio_fotografico } = req.body;
   if (!nombre_sede) {
@@ -138,8 +133,7 @@ export const createSede = async (req, res) => {
   let latitud = null;
   let longitud = null;
   if (direccion && localidad && provincia) {
-    const fullAddress = `${direccion}, ${codigo_postal} ${localidad}, ${provincia}, España`;
-    const coords = await geocodeAddress(fullAddress);
+    const coords = await geocodeAddress({ direccion, codigo_postal, localidad, provincia });
     if (coords) {
       latitud = coords.lat;
       longitud = coords.lon;
@@ -156,7 +150,6 @@ export const createSede = async (req, res) => {
   }
 };
 
-// --- UPDATE ---
 export const updateSede = async (req, res) => {
   const { id } = req.params;
   const newData = req.body;
@@ -181,8 +174,7 @@ export const updateSede = async (req, res) => {
       newData.codigo_postal !== currentData.codigo_postal;
     
     if ((addressHasChanged || latitud === null) && (newData.direccion && newData.localidad && newData.provincia)) {
-      const fullAddress = `${newData.direccion}, ${newData.codigo_postal} ${newData.localidad}, ${newData.provincia}, España`;
-      const coords = await geocodeAddress(fullAddress);
+      const coords = await geocodeAddress(newData);
       if (coords) {
         latitud = coords.lat;
         longitud = coords.lon;
@@ -201,4 +193,31 @@ export const updateSede = async (req, res) => {
   } finally {
     if (conn) conn.release();
   }
+};
+
+export const getTrabajadoresBySede = async (req, res) => {
+    const { id } = req.params;
+    try {
+      const query = `
+        SELECT 
+          t.*, 
+          p.nombre_puesto as puesto,
+          COALESCE(s.nombre_sede, c.nombre_centro) AS ubicacion,
+          d.nombre as departamento,
+          ter.codigo as territorio
+        FROM trabajadores t
+        LEFT JOIN puestos p ON t.puesto_id = p.id
+        LEFT JOIN sedes s ON t.sede_id = s.id
+        LEFT JOIN centros c ON t.centro_id = c.id
+        LEFT JOIN departamentos d ON t.departamento_id = d.id
+        LEFT JOIN territorios ter ON t.territorio_id = ter.id
+        WHERE t.sede_id = ? AND t.estado = 'Alta'
+        ORDER BY t.apellidos, t.nombre;
+      `;
+      const [trabajadores] = await pool.query(query, [id]);
+      res.json(trabajadores);
+    } catch (error) {
+      console.error("Error al obtener los trabajadores de la sede:", error);
+      res.status(500).json({ message: 'Error del servidor.' });
+    }
 };

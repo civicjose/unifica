@@ -1,28 +1,20 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = 'http://localhost:4000/api';
-//const API_URL = '/api';
+//const API_URL = 'http://localhost:4000/api';
+const API_URL = '/api';
 
-// Variable para controlar si ya se está gestionando una caducidad de sesión
 let isHandlingSessionExpiration = false;
 
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Comprobamos si el error es un 401 y si no lo estamos gestionando ya
     if (error.response && error.response.status === 401 && !isHandlingSessionExpiration) {
-      // Marcamos que estamos gestionando el error para evitar bucles
       isHandlingSessionExpiration = true;
-      
       localStorage.removeItem('token');
-      
       toast.error('Tu sesión ha caducado. Por favor, inicia sesión de nuevo.');
-      
-      // Redirigimos a la página de login
       window.location.replace('/#/'); 
     }
-    
     return Promise.reject(error);
   }
 );
@@ -64,6 +56,10 @@ const importTrabajadores = (file, token) => {
   const config = { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` } };
   return axios.post(`${API_URL}/trabajadores/import`, formData, config);
 };
+// --- NUEVAS FUNCIONES AÑADIDAS ---
+const getTrabajadoresBySede = (id, token) => axios.get(`${API_URL}/sedes/${id}/trabajadores`, getConfig(token));
+const getTrabajadoresByCentro = (id, token) => axios.get(`${API_URL}/centros/${id}/trabajadores`, getConfig(token));
+
 
 // --- Listas ---
 const getPuestos = (token) => axios.get(`${API_URL}/puestos`, getConfig(token));
@@ -154,6 +150,8 @@ const apiService = {
   updateTrabajador,
   deleteTrabajador,
   importTrabajadores,
+  getTrabajadoresBySede,
+  getTrabajadoresByCentro, 
   // Listas
   getPuestos,
   getSedes,

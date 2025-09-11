@@ -5,7 +5,8 @@ import {
   createSede, 
   updateSede, 
   deleteSede,
-  getSedeDetails
+  getSedeDetails,
+  getTrabajadoresBySede
 } from '../controllers/sedesController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
@@ -14,6 +15,7 @@ const router = express.Router();
 router.get('/', protect, getAllSedes);
 router.get('/:id', protect, getSedeById);
 router.get('/:id/details', protect, getSedeDetails);
+router.get ('/:id/trabajadores', protect, getTrabajadoresBySede);
 
 // Rutas de escritura y borrado
 router.post('/', protect, authorize('Administrador', 'Técnico'), createSede); 

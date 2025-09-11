@@ -2,15 +2,18 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { FiEdit, FiTrash2, FiBox, FiTruck, FiCpu, FiMonitor, FiUsers } from 'react-icons/fi';
 
-const renderDetalles = (detalles) => {
-  if (!detalles) return null;
-  const formatLabel = (key) => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+// La función para renderizar los detalles ahora usa la definición de campos para encontrar la etiqueta original
+const renderDetalles = (detalles, camposDefinicion) => {
+  if (!detalles || !camposDefinicion || camposDefinicion.length === 0) return null;
+
+  // Creamos un mapa para buscar la etiqueta original de forma eficiente
+  const labelMap = new Map(camposDefinicion.map(campo => [campo.name, campo.label]));
 
   return (
     <div className="mt-3 space-y-2 text-sm">
       {Object.entries(detalles).map(([key, value]) => (
         <div key={key} className="flex">
-          <p className="w-1/3 font-semibold text-slate-500">{formatLabel(key)}:</p>
+          <p className="w-1/3 font-semibold text-slate-500">{labelMap.get(key) || key}:</p>
           <p className="w-2/3 text-slate-700">{value}</p>
         </div>
       ))}
@@ -18,7 +21,8 @@ const renderDetalles = (detalles) => {
   );
 };
 
-function ProveedorCard({ proveedorInfo, onEdit, onDelete, onContactClick }) {
+
+function ProveedorCard({ proveedorInfo, onEdit, onDelete, onContactClick, camposDefinicion = [] }) {
   const { user } = useAuth();
 
   const getIcon = (categoria) => {
@@ -79,7 +83,7 @@ function ProveedorCard({ proveedorInfo, onEdit, onDelete, onContactClick }) {
         </div>
       )}
 
-      {renderDetalles(proveedorInfo.detalles)}
+      {renderDetalles(proveedorInfo.detalles, camposDefinicion)}
     </div>
   );
 }

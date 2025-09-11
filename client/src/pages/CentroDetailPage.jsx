@@ -9,6 +9,8 @@ import AddProveedorModal from '../components/modals/AddProveedorModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import CentroModal from '../components/modals/CentroModal';
 import ContactoDetailModal from '../components/modals/ContactoDetailModal';
+import TrabajadoresList from '../components/sedes/TrabajadoresList';
+import TrabajadorDetailModal from '../components/modals/TrabajadorDetailModal';
 
 const InfoBlock = ({ title, children, onEdit }) => (
   <div className="bg-white p-6 rounded-xl border shadow-sm h-full">
@@ -36,7 +38,11 @@ function CentroDetailPage() {
   const { token, user } = useAuth();
   const [centro, setCentro] = useState(null);
   const [directores, setDirectores] = useState([]);
+  const [trabajadores, setTrabajadores] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [activeTab, setActiveTab] = useState('proveedores');
+  const [trabajadorToShow, setTrabajadorToShow] = useState(null);
   
   const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false);
   const [isCentroModalOpen, setIsCentroModalOpen] = useState(false);
@@ -51,9 +57,10 @@ function CentroDetailPage() {
     if (token && id) {
       setLoading(true);
       try {
-        const [ centroRes, directoresRes, provRes, appRes, terrRes, tiposRes, catRes ] = await Promise.all([
+        const [ centroRes, directoresRes, trabajadoresRes, provRes, appRes, terrRes, tiposRes, catRes ] = await Promise.all([
           apiService.getCentroDetails(id, token),
           apiService.getDirectoresByCentro(id, token), 
+          apiService.getTrabajadoresByCentro(id, token),
           apiService.getProveedores(token),
           apiService.getAplicaciones(token),
           apiService.getTerritorios(token),
@@ -63,6 +70,7 @@ function CentroDetailPage() {
 
         setCentro(centroRes.data);
         setDirectores(directoresRes.data);
+        setTrabajadores(trabajadoresRes.data);
         setProveedores(provRes.data);
         setAplicaciones(appRes.data);
         setListas({ 
@@ -84,7 +92,8 @@ function CentroDetailPage() {
   const handleOpenEditProveedorModal = (item) => { setItemToEdit(item); setIsProveedorModalOpen(true); };
   const handleDeleteProveedorClick = (item) => { setItemToDelete(item); };
   const handleContactClick = (contacto) => { setContactToShow(contacto); };
-  
+  const handleWorkerClick = (trabajador) => { setTrabajadorToShow(trabajador); };
+
   const handleModalSuccess = () => {
     setIsProveedorModalOpen(false);
     setIsCentroModalOpen(false);
@@ -112,6 +121,10 @@ function CentroDetailPage() {
     return `${baseUrl}?${params.toString()}`;
   };
 
+  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg focus:outline-none transition-colors";
+  const activeTabStyle = "bg-white text-primary border-b-2 border-primary";
+  const inactiveTabStyle = "text-slate-500 hover:bg-slate-200/50";
+
   if (loading) { return <p className="text-center p-8">Cargando datos del centro...</p>; }
   if (!centro) { return <p className="text-center p-8">No se encontró el centro.</p>; }
 
@@ -120,7 +133,7 @@ function CentroDetailPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Link to="/centros" className="flex items-center gap-2 text-primary font-semibold hover:underline">
-            <FiArrowLeft /> Volver a la lista de centros
+            <FiArrowLeft /> Volver
           </Link>
           {['Administrador', 'Técnico'].includes(user.rol) && (
             <button onClick={() => setIsCentroModalOpen(true)} className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700">
@@ -164,37 +177,56 @@ function CentroDetailPage() {
             </InfoBlock>
           </div>
           <div className="md:col-span-2">
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
-                <div className="flex items-center justify-between border-b pb-2 mb-4">
-                    <h3 className="text-lg font-bold text-secondary">Proveedores Contratados</h3>
-                    {['Administrador', 'Técnico'].includes(user.rol) && (
-                      <button onClick={handleOpenAddProveedorModal} className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-primary/90">
-                          <FiPlus /> Añadir Proveedor
-                      </button>
+            <div className="border-b border-slate-300">
+                <nav className="flex flex-wrap -mb-px">
+                  <button onClick={() => setActiveTab('proveedores')} className={`${tabStyle} ${activeTab === 'proveedores' ? activeTabStyle : inactiveTabStyle}`}>
+                    Proveedores
+                  </button>
+                  <button onClick={() => setActiveTab('trabajadores')} className={`${tabStyle} ${activeTab === 'trabajadores' ? activeTabStyle : inactiveTabStyle}`}>
+                    Trabajadores
+                  </button>
+                </nav>
+              </div>
+              <div className="bg-white p-6 rounded-b-xl border-x border-b shadow-sm">
+                {activeTab === 'proveedores' && (
+                  <div className="space-y-4">
+                     {['Administrador', 'Técnico'].includes(user.rol) && (
+                        <div className="flex justify-end">
+                            <button onClick={handleOpenAddProveedorModal} className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-primary/90">
+                                <FiPlus /> Añadir Proveedor
+                            </button>
+                        </div>
+                      )}
+                    {centro.servicios && centro.servicios.length > 0 ? (
+                      centro.servicios.map(proveedorInfo => {
+                        const categoriaDef = listas.categorias.find(c => c.nombre_categoria === proveedorInfo.categoria);
+                        return (
+                          <ProveedorCard 
+                            key={proveedorInfo.id} 
+                            proveedorInfo={proveedorInfo}
+                            camposDefinicion={categoriaDef ? categoriaDef.campos_formulario : []}
+                            onEdit={['Administrador', 'Técnico'].includes(user.rol) ? handleOpenEditProveedorModal : undefined}
+                            onDelete={user.rol === 'Administrador' ? handleDeleteProveedorClick : undefined}
+                            onContactClick={handleContactClick}
+                          />
+                        );
+                      })
+                    ) : (
+                      <p className="text-center text-slate-500 py-4">No hay proveedores registrados para este centro.</p>
                     )}
-                </div>
-                <div className="space-y-4">
-                  {centro.servicios && centro.servicios.length > 0 ? (
-                    centro.servicios.map(proveedorInfo => (
-                      <ProveedorCard 
-                        key={proveedorInfo.id} 
-                        proveedorInfo={proveedorInfo}
-                        onEdit={['Administrador', 'Técnico'].includes(user.rol) ? handleOpenEditProveedorModal : undefined}
-                        onDelete={user.rol === 'Administrador' ? handleDeleteProveedorClick : undefined}
-                        onContactClick={handleContactClick}
-                      />
-                    ))
-                  ) : (
-                    <p className="text-center text-slate-500 py-4">No hay proveedores registrados para este centro.</p>
-                  )}
-                </div>
-            </div>
+                  </div>
+                )}
+                {activeTab === 'trabajadores' && (
+                  <TrabajadoresList trabajadores={trabajadores} onWorkerClick={handleWorkerClick} />
+                )}
+              </div>
           </div>
         </div>
       </div>
       <AddProveedorModal isOpen={isProveedorModalOpen} onClose={() => { setIsProveedorModalOpen(false); setItemToEdit(null); }} onSuccess={handleModalSuccess} centroId={id} proveedores={proveedores} aplicaciones={aplicaciones} categorias={listas.categorias} itemToEdit={itemToEdit} />
       <CentroModal isOpen={isCentroModalOpen} onClose={() => setIsCentroModalOpen(false)} onSuccess={handleModalSuccess} itemToEdit={centro} listas={listas} />
       <ContactoDetailModal isOpen={contactToShow !== null} onClose={() => setContactToShow(null)} contacto={contactToShow} />
+      <TrabajadorDetailModal isOpen={trabajadorToShow !== null} onClose={() => setTrabajadorToShow(null)} trabajador={trabajadorToShow} />
       <ConfirmModal isOpen={itemToDelete !== null} onClose={() => setItemToDelete(null)} onConfirm={handleConfirmDelete} title="Desvincular Proveedor">
         <p>¿Seguro que quieres desvincular a <strong>{itemToDelete?.nombre_proveedor || itemToDelete?.nombre_aplicacion}</strong> de este centro?</p>
       </ConfirmModal>

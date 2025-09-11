@@ -9,9 +9,11 @@ import AddProveedorModal from '../components/modals/AddProveedorModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import SedeModal from '../components/modals/SedeModal';
 import ContactoDetailModal from '../components/modals/ContactoDetailModal';
+import TrabajadoresList from '../components/sedes/TrabajadoresList';
+import TrabajadorDetailModal from '../components/modals/TrabajadorDetailModal';
 
-const InfoBlock = ({ title, children, onEdit }) => (
-  <div className="bg-white p-6 rounded-xl border shadow-sm h-full">
+const InfoBlock = ({ title, children, onEdit, className = '' }) => (
+  <div className={`bg-white p-6 rounded-xl border shadow-sm h-full ${className}`}>
     <div className="flex justify-between items-center border-b pb-2 mb-4">
       <h3 className="text-lg font-bold text-secondary">{title}</h3>
       {onEdit && ( <button onClick={onEdit} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Información"><FiEdit /></button> )}
@@ -31,8 +33,12 @@ function SedeDetailPage() {
   const { id } = useParams();
   const { token, user } = useAuth();
   const [sede, setSede] = useState(null);
+  const [trabajadores, setTrabajadores] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  const [activeTab, setActiveTab] = useState('proveedores');
+  const [trabajadorToShow, setTrabajadorToShow] = useState(null);
+
   const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false);
   const [isSedeModalOpen, setIsSedeModalOpen] = useState(false);
   const [contactToShow, setContactToShow] = useState(null);
@@ -46,14 +52,16 @@ function SedeDetailPage() {
     if (token && id) {
       setLoading(true);
       try {
-        const [sedeRes, provRes, appRes, terrRes, catRes] = await Promise.all([
+        const [sedeRes, trabajadoresRes, provRes, appRes, terrRes, catRes] = await Promise.all([
           apiService.getSedeDetails(id, token),
+          apiService.getTrabajadoresBySede(id, token),
           apiService.getProveedores(token),
           apiService.getAplicaciones(token),
           apiService.getTerritorios(token),
           apiService.getCategoriasProveedor(token),
         ]);
         setSede(sedeRes.data);
+        setTrabajadores(trabajadoresRes.data);
         setProveedores(provRes.data);
         setAplicaciones(appRes.data);
         setListas({ 
@@ -74,6 +82,7 @@ function SedeDetailPage() {
   const handleOpenEditProveedorModal = (item) => { setItemToEdit(item); setIsProveedorModalOpen(true); };
   const handleDeleteProveedorClick = (item) => { setItemToDelete(item); };
   const handleContactClick = (contacto) => { setContactToShow(contacto); };
+  const handleWorkerClick = (trabajador) => { setTrabajadorToShow(trabajador); };
   
   const handleModalSuccess = () => {
     setIsProveedorModalOpen(false);
@@ -102,6 +111,10 @@ function SedeDetailPage() {
     return `${baseUrl}?${params.toString()}`;
   };
 
+  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg focus:outline-none transition-colors";
+  const activeTabStyle = "bg-white text-primary border-b-2 border-primary";
+  const inactiveTabStyle = "text-slate-500 hover:bg-slate-200/50";
+
   if (loading) { return <p className="text-center p-8">Cargando datos de la sede...</p>; }
   if (!sede) { return <p className="text-center p-8">No se encontró la sede.</p>; }
 
@@ -110,7 +123,7 @@ function SedeDetailPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
             <Link to="/sedes" className="flex items-center gap-2 text-primary font-semibold hover:underline">
-                <FiArrowLeft /> Volver a la lista de sedes
+                <FiArrowLeft /> Volver
             </Link>
             {['Administrador', 'Técnico'].includes(user.rol) && (
                 <button onClick={() => setIsSedeModalOpen(true)} className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700">
@@ -141,30 +154,48 @@ function SedeDetailPage() {
             </InfoBlock>
           </div>
           <div className="md:col-span-2">
-              <div className="bg-white p-6 rounded-xl border shadow-sm">
-                  <div className="flex items-center justify-between border-b pb-2 mb-4">
-                      <h3 className="text-lg font-bold text-secondary">Proveedores Contratados</h3>
-                      {['Administrador', 'Técnico'].includes(user.rol) && (
-                        <button onClick={handleOpenAddProveedorModal} className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-primary/90">
-                            <FiPlus /> Añadir Proveedor
-                        </button>
-                      )}
-                  </div>
+              <div className="border-b border-slate-300">
+                <nav className="flex flex-wrap -mb-px">
+                  <button onClick={() => setActiveTab('proveedores')} className={`${tabStyle} ${activeTab === 'proveedores' ? activeTabStyle : inactiveTabStyle}`}>
+                    Proveedores
+                  </button>
+                  <button onClick={() => setActiveTab('trabajadores')} className={`${tabStyle} ${activeTab === 'trabajadores' ? activeTabStyle : inactiveTabStyle}`}>
+                    Trabajadores
+                  </button>
+                </nav>
+              </div>
+              <div className="bg-white p-6 rounded-b-xl border-x border-b shadow-sm">
+                {activeTab === 'proveedores' && (
                   <div className="space-y-4">
+                     {['Administrador', 'Técnico'].includes(user.rol) && (
+                        <div className="flex justify-end">
+                            <button onClick={handleOpenAddProveedorModal} className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-primary/90">
+                                <FiPlus /> Añadir Proveedor
+                            </button>
+                        </div>
+                      )}
                     {sede.proveedores && sede.proveedores.length > 0 ? (
-                      sede.proveedores.map(proveedorInfo => (
-                        <ProveedorCard 
-                          key={proveedorInfo.id} 
-                          proveedorInfo={proveedorInfo}
-                          onEdit={['Administrador', 'Técnico'].includes(user.rol) ? handleOpenEditProveedorModal : undefined}
-                          onDelete={user.rol === 'Administrador' ? handleDeleteProveedorClick : undefined}
-                          onContactClick={handleContactClick}
-                        />
-                      ))
+                       sede.proveedores.map(proveedorInfo => {
+                        const categoriaDef = listas.categorias.find(c => c.nombre_categoria === proveedorInfo.categoria);
+                        return (
+                          <ProveedorCard 
+                            key={proveedorInfo.id} 
+                            proveedorInfo={proveedorInfo}
+                            camposDefinicion={categoriaDef ? categoriaDef.campos_formulario : []}
+                            onEdit={['Administrador', 'Técnico'].includes(user.rol) ? handleOpenEditProveedorModal : undefined}
+                            onDelete={user.rol === 'Administrador' ? handleDeleteProveedorClick : undefined}
+                            onContactClick={handleContactClick}
+                          />
+                        );
+                      })
                     ) : (
                       <p className="text-center text-slate-500 py-4">No hay proveedores registrados para esta sede.</p>
                     )}
                   </div>
+                )}
+                {activeTab === 'trabajadores' && (
+                  <TrabajadoresList trabajadores={trabajadores} onWorkerClick={handleWorkerClick} />
+                )}
               </div>
           </div>
         </div>
@@ -172,6 +203,7 @@ function SedeDetailPage() {
       <AddProveedorModal isOpen={isProveedorModalOpen} onClose={() => { setIsProveedorModalOpen(false); setItemToEdit(null); }} onSuccess={handleModalSuccess} sedeId={id} proveedores={proveedores} aplicaciones={aplicaciones} categorias={listas.categorias} itemToEdit={itemToEdit} />
       <SedeModal isOpen={isSedeModalOpen} onClose={() => setIsSedeModalOpen(false)} onSuccess={handleModalSuccess} itemToEdit={sede} listas={listas} />
       <ContactoDetailModal isOpen={contactToShow !== null} onClose={() => setContactToShow(null)} contacto={contactToShow} />
+      <TrabajadorDetailModal isOpen={trabajadorToShow !== null} onClose={() => setTrabajadorToShow(null)} trabajador={trabajadorToShow} />
       <ConfirmModal isOpen={itemToDelete !== null} onClose={() => setItemToDelete(null)} onConfirm={handleConfirmDelete} title="Desvincular Proveedor de Sede">
         <p>¿Seguro que quieres desvincular a <strong>{itemToDelete?.nombre_proveedor || itemToDelete?.nombre_aplicacion}</strong> de esta sede?</p>
       </ConfirmModal>

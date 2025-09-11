@@ -36,11 +36,26 @@ const getAllTrabajadores = async (req, res) => {
   `;
   const whereClauses = [];
   const queryParams = [];
+
+  // --- LÓGICA DE BÚSQUEDA CORREGIDA ---
   if (search) {
-    whereClauses.push(`(t.nombre LIKE ? OR t.apellidos LIKE ? OR t.email LIKE ? OR p.nombre_puesto LIKE ? OR COALESCE(s.nombre_sede, c.nombre_centro) LIKE ? OR ter.codigo LIKE ?)`);
-    const searchTerm = `%${search}%`;
-    queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    const searchTerms = search.split(' ').filter(term => term.length > 0);
+    searchTerms.forEach(term => {
+      const searchTerm = `%${term}%`;
+      whereClauses.push(
+        `(
+          CONCAT(t.nombre, ' ', t.apellidos) LIKE ? OR
+          t.email LIKE ? OR
+          p.nombre_puesto LIKE ? OR
+          COALESCE(s.nombre_sede, c.nombre_centro) LIKE ? OR
+          ter.codigo LIKE ?
+        )`
+      );
+      // Añade el parámetro para cada '?' en la cláusula
+      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    });
   }
+  
   const sedeIds = sedes ? sedes.split(',').map(id => parseInt(id, 10)) : [];
   const centroIds = centros ? centros.split(',').map(id => parseInt(id, 10)) : [];
   if (sedeIds.length > 0 || centroIds.length > 0) {
