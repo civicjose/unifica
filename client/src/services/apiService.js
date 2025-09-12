@@ -1,23 +1,25 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-//const API_URL = 'http://localhost:4000/api';
-const API_URL = '/api';
+const API_URL = 'http://localhost:4000/api';
+//const API_URL = '/api';
 
 let isHandlingSessionExpiration = false;
 
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401 && !isHandlingSessionExpiration) {
-      isHandlingSessionExpiration = true;
-      localStorage.removeItem('token');
-      toast.error('Tu sesión ha caducado. Por favor, inicia sesión de nuevo.');
-      window.location.replace('/#/'); 
+export const setupAxiosInterceptors = (logout) => {
+  axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response && error.response.status === 401 && !isHandlingSessionExpiration) {
+        isHandlingSessionExpiration = true;
+        toast.error('Tu sesión ha caducado. Por favor, inicia sesión de nuevo.');
+        logout(); 
+      }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
-  }
-);
+  );
+};
+
 
 const getConfig = (token) => ({
   headers: { Authorization: `Bearer ${token}` },
@@ -56,7 +58,6 @@ const importTrabajadores = (file, token) => {
   const config = { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` } };
   return axios.post(`${API_URL}/trabajadores/import`, formData, config);
 };
-// --- NUEVAS FUNCIONES AÑADIDAS ---
 const getTrabajadoresBySede = (id, token) => axios.get(`${API_URL}/sedes/${id}/trabajadores`, getConfig(token));
 const getTrabajadoresByCentro = (id, token) => axios.get(`${API_URL}/centros/${id}/trabajadores`, getConfig(token));
 
@@ -151,7 +152,7 @@ const apiService = {
   deleteTrabajador,
   importTrabajadores,
   getTrabajadoresBySede,
-  getTrabajadoresByCentro, 
+  getTrabajadoresByCentro,
   // Listas
   getPuestos,
   getSedes,

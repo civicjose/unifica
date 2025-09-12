@@ -1,4 +1,7 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react'; // Importar useEffect
+import { useAuth } from './context/AuthContext'; // Importar useAuth
+import { setupAxiosInterceptors } from './services/apiService'; // Importar la nueva función
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -13,6 +16,12 @@ import ProveedoresPage from './pages/ProveedoresPage';
 import ProveedorDetailPage from './pages/ProveedoresDetailPage';
 
 function App() {
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    setupAxiosInterceptors(logout);
+  }, [logout]);
+
   return (
     <HashRouter>
       <Routes>
