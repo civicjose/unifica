@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Añade estas clases al final del archivo */
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Oculta el scroll en Chrome, Safari y Opera */
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* Oculta el scroll en IE y Edge */
+  scrollbar-width: none;  /* Oculta el scroll en Firefox */
+}

@@ -121,21 +121,21 @@ function SedeDetailPage() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <Link to="/sedes" className="flex items-center gap-2 text-primary font-semibold hover:underline">
                 <FiArrowLeft /> Volver
             </Link>
             {['Administrador', 'Técnico'].includes(user.rol) && (
-                <button onClick={() => setIsSedeModalOpen(true)} className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700">
+                <button onClick={() => setIsSedeModalOpen(true)} className="flex items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700 w-full sm:w-auto">
                     <FiEdit /> Editar Sede
                 </button>
             )}
         </div>
         
-        <h1 className="text-4xl font-bold text-gray-800">{sede.nombre_sede}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-800">{sede.nombre_sede}</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:items-start">
-          <div className="md:col-span-1 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="lg:col-span-1 space-y-6">
             <InfoBlock title="Información General">
               <DetailRow label="Dirección">{`${sede.direccion || ''}, ${sede.codigo_postal || ''} ${sede.localidad || ''}, ${sede.provincia || ''}`}</DetailRow>
               <DetailRow label="Teléfono">{sede.telefono}</DetailRow>
@@ -153,7 +153,7 @@ function SedeDetailPage() {
               </div>
             </InfoBlock>
           </div>
-          <div className="md:col-span-2">
+          <div className="lg:col-span-2">
               <div className="border-b border-slate-300">
                 <nav className="flex flex-wrap -mb-px">
                   <button onClick={() => setActiveTab('proveedores')} className={`${tabStyle} ${activeTab === 'proveedores' ? activeTabStyle : inactiveTabStyle}`}>
@@ -164,7 +164,7 @@ function SedeDetailPage() {
                   </button>
                 </nav>
               </div>
-              <div className="bg-white p-6 rounded-b-xl border-x border-b shadow-sm">
+              <div className="bg-white p-4 sm:p-6 rounded-b-xl border-x border-b shadow-sm">
                 {activeTab === 'proveedores' && (
                   <div className="space-y-4">
                      {['Administrador', 'Técnico'].includes(user.rol) && (

@@ -55,45 +55,53 @@ function CategoriaModal({ isOpen, onClose, onSubmit, itemToEdit }) {
 
   if (!isOpen) return null;
 
+  // --- ESTILO CORREGIDO Y UNIFICADO ---
+  const inputStyle = "w-full mt-1 rounded-lg border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-60">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-60 p-4">
       <div className="w-full max-w-2xl bg-white p-6 rounded-xl shadow-2xl">
         <h3 className="text-2xl font-bold text-secondary mb-4">{itemToEdit ? 'Editar' : 'Nueva'} Categoría</h3>
         <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
           <div>
-            <label className="font-semibold">Nombre de la Categoría</label>
-            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full mt-1 rounded-lg border-slate-300" required />
+            <label className="font-semibold text-slate-600">Nombre de la Categoría</label>
+            <input 
+              type="text" 
+              value={nombre} 
+              onChange={(e) => setNombre(e.target.value)} 
+              className={inputStyle} 
+              required 
+            />
           </div>
 
           <div>
-            <h4 className="font-semibold">Campos Personalizados del Formulario</h4>
+            <h4 className="font-semibold text-slate-600">Campos Personalizados del Formulario</h4>
             <div className="space-y-3 mt-2">
               {campos.map((campo, index) => (
                 <div key={index} className="p-3 bg-slate-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-grow">
-                      <label className="text-sm font-medium text-slate-600">Etiqueta del Campo (lo que verá el usuario)</label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                    <div className="flex-grow w-full">
+                      <label className="text-sm font-medium text-slate-600">Etiqueta del Campo</label>
                       <input 
                         type="text" 
                         value={campo.label} 
                         onChange={(e) => handleCampoChange(index, e)} 
                         placeholder="Ej: Línea Contratada" 
-                        className="w-full mt-1 rounded-md border-slate-300" 
+                        className={inputStyle}
                         required 
                       />
                     </div>
-                    <div className="w-1/4">
-                       <label className="text-sm font-medium text-slate-600">Tipo de Campo</label>
-                       <select value={campo.type} onChange={(e) => handleTypeChange(index, e)} className="w-full mt-1 rounded-md border-slate-300">
+                    <div className="w-full sm:w-1/4">
+                       <label className="text-sm font-medium text-slate-600">Tipo</label>
+                       <select value={campo.type} onChange={(e) => handleTypeChange(index, e)} className={inputStyle}>
                          <option value="text">Texto</option>
                          <option value="textarea">Área de Texto</option>
                        </select>
                     </div>
                     <button type="button" onClick={() => removeCampo(index)} className="p-2 text-red-500 self-end mb-1"><FiTrash2 /></button>
                   </div>
-                  {/* Mostramos el ID generado para que sea informativo, pero no editable */}
                   <p className="text-xs text-slate-400 mt-1">
-                    ID del campo (generado automáticamente): <code className="bg-slate-200 px-1 rounded">{campo.name}</code>
+                    ID del campo: <code className="bg-slate-200 px-1 rounded">{campo.name}</code>
                   </p>
                 </div>
               ))}
@@ -103,8 +111,8 @@ function CategoriaModal({ isOpen, onClose, onSubmit, itemToEdit }) {
             </div>
           </div>
           
-          <div className="flex justify-end gap-4 pt-4 border-t">
-            <button type="button" onClick={onClose} className="rounded-full bg-slate-100 px-5 py-2 font-bold">Cancelar</button>
+          <div className="flex justify-end gap-4 pt-4 border-t mt-6">
+            <button type="button" onClick={onClose} className="rounded-full bg-slate-100 px-5 py-2 font-bold text-slate-700">Cancelar</button>
             <button type="submit" className="rounded-full bg-primary px-5 py-2 font-bold text-white">Guardar</button>
           </div>
         </form>

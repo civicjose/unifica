@@ -27,16 +27,17 @@ function ContactoModal({ isOpen, onClose, onSubmit, itemToEdit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData); // La lógica de guardado la manejará el componente padre
+    onSubmit(formData);
   };
 
   if (!isOpen) return null;
 
-  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 shadow-sm";
+  // --- CORRECCIÓN AQUÍ ---
+  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-3 py-2 text-slate-800 shadow-sm";
   const labelStyle = "mb-1 block text-sm font-semibold text-slate-600";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-60">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-60 p-4">
       <div className="w-full max-w-2xl bg-white p-6 rounded-xl shadow-2xl">
         <h3 className="text-2xl font-bold text-secondary mb-4">{itemToEdit ? 'Editar' : 'Añadir'} Contacto</h3>
         <form onSubmit={handleSubmit} className="space-y-4">

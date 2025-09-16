@@ -6,7 +6,6 @@ import GenericManagementPage from './GenericManagementPage';
 import UsersPage from './UsersPage';
 import CategoriasProveedorManager from '../components/configuracion/CategoriasProveedorManager';
 
-// Objeto de configuración actualizado, sin Proveedores ni Aplicaciones
 const TABS_CONFIG = {
   'Usuarios': {
     component: UsersPage,
@@ -68,13 +67,14 @@ const TABS_CONFIG = {
   }
 };
 
+
 function ConfiguracionPage() {
   const [activeTab, setActiveTab] = useState('Usuarios'); 
   
   const ActiveComponent = TABS_CONFIG[activeTab].component;
   const componentProps = TABS_CONFIG[activeTab].props;
 
-  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg transition-colors focus:outline-none";
+  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg transition-colors focus:outline-none flex-shrink-0";
   const activeTabStyle = "bg-white text-primary border-b-2 border-primary";
   const inactiveTabStyle = "bg-transparent text-slate-500 hover:bg-slate-200/50";
 
@@ -83,7 +83,8 @@ function ConfiguracionPage() {
       <h1 className="text-4xl font-bold text-gray-800">Configuración del Sistema</h1>
       
       <div className="border-b border-slate-300">
-        <nav className="flex flex-wrap -mb-px">
+        {/* --- LÍNEA MODIFICADA --- */}
+        <nav className="flex -mb-px overflow-x-auto no-scrollbar">
           {Object.keys(TABS_CONFIG).map(tabName => (
             <button
               key={tabName}

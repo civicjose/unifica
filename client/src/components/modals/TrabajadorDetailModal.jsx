@@ -8,7 +8,8 @@ const getInitials = (name = '') => {
   if (!name) return '';
   const names = name.split(' ');
   if (names.length === 1) return names[0].charAt(0).toUpperCase();
-  return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  const lastNameInitial = names[names.length - 1] ? names[names.length - 1].charAt(0) : '';
+  return (names[0].charAt(0) + lastNameInitial).toUpperCase();
 };
 
 const formatDate = (dateString) => {
@@ -72,30 +73,32 @@ function TrabajadorDetailModal({ isOpen, onClose, trabajador }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
         <div className="w-full max-w-2xl rounded-xl bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4 rounded-t-xl">
+          {/* --- INICIO DE LA CORRECCIÓN FINAL --- */}
+          <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 p-4 rounded-t-xl">
             <h3 className="text-2xl font-semibold text-secondary">Ficha de Trabajador</h3>
-            
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button 
                 onClick={() => setIsHistorialOpen(true)}
                 className="flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-300"
                 title="Ver historial de cambios"
               >
-                <FiClock className="h-4 w-4" /> Historial
+                <FiClock className="h-4 w-4" /> 
+                <span className="hidden sm:inline">Historial</span>
               </button>
-              <button onClick={onClose} className="text-3xl font-light text-gray-400 hover:text-gray-800"><FiX /></button>
+              <button onClick={onClose} className="text-3xl font-light text-gray-400 hover:text-gray-800">&times;</button>
             </div>
           </div>
+          {/* --- FIN DE LA CORRECCIÓN FINAL --- */}
           
           <div className="p-6 max-h-[70vh] overflow-y-auto">
-            <div className="flex items-center">
-              <div className="mr-6 flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-4xl font-bold text-white">
+            <div className="flex flex-col sm:flex-row items-center">
+              <div className="mb-4 sm:mb-0 sm:mr-6 flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-4xl font-bold text-white">
                 {getInitials(`${trabajador.nombre} ${trabajador.apellidos}`)}
               </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-900">{trabajador.nombre} {trabajador.apellidos}</p>
+              <div className="text-center sm:text-left">
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 break-words">{trabajador.nombre} {trabajador.apellidos}</p>
                 <p className="mt-1 text-lg text-slate-500">{trabajador.puesto || 'Puesto no asignado'}</p>
               </div>
             </div>
@@ -111,9 +114,9 @@ function TrabajadorDetailModal({ isOpen, onClose, trabajador }) {
                     href={createGlpiLink(computerName)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center text-primary hover:text-purple-600"
+                    className="flex items-center text-primary hover:text-purple-600 break-all"
                   >
-                    {computerName}
+                    {computerName} <FiExternalLink className="ml-1 h-4 w-4 flex-shrink-0" />
                   </a>
                 ) : (
                   'No asignado'

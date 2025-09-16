@@ -4,8 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import ConfirmModal from '../components/modals/ConfirmModal';
 
-// fields: [{ name: 'nombre', label: 'Nombre' }]
-// o para territorios: [{ name: 'codigo', label: 'Código' }, { name: 'zona', label: 'Zona' }]
 function GenericManagementPage({ title, fields, fetchAll, createItem, updateItem, deleteItem }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +33,6 @@ function GenericManagementPage({ title, fields, fetchAll, createItem, updateItem
 
   const handleOpenModal = (item = null) => {
     setCurrentItem(item);
-    // Inicializa el estado del formulario
     if (item) {
       setItemData(item);
     } else {
@@ -85,6 +82,8 @@ function GenericManagementPage({ title, fields, fetchAll, createItem, updateItem
       error: (err) => err.response?.data?.message || 'Error al eliminar.',
     });
   };
+  
+  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
 
   return (
     <>
@@ -102,8 +101,8 @@ function GenericManagementPage({ title, fields, fetchAll, createItem, updateItem
         {loading ? <p className="p-4 text-center">Cargando...</p> : (
           <ul className="divide-y divide-slate-200">
             {items.map(item => (
-              <li key={item.id} className="flex items-center justify-between p-4 hover:bg-slate-50">
-                <span className="text-slate-800">
+              <li key={item.id} className="flex items-center justify-between gap-4 p-4 hover:bg-slate-50">
+                <span className="text-slate-800 min-w-0 truncate">
                   {item.nombre_proveedor 
                     ? item.nombre_proveedor
                     : item.codigo 
@@ -113,7 +112,7 @@ function GenericManagementPage({ title, fields, fetchAll, createItem, updateItem
                         : item.nombre
                   }
                 </span>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <button onClick={() => handleOpenModal(item)} className="text-blue-500 hover:text-blue-700"><FiEdit2 /></button>
                   <button onClick={() => setItemToDelete(item)} className="text-red-500 hover:text-red-700"><FiTrash2 /></button>
                 </div>
@@ -123,9 +122,8 @@ function GenericManagementPage({ title, fields, fetchAll, createItem, updateItem
         )}
       </div>
 
-      {/* Modal Genérico */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
           <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-2xl font-semibold text-secondary">{currentItem ? 'Editar' : 'Añadir'} {title.slice(0, -1)}</h3>
@@ -140,14 +138,14 @@ function GenericManagementPage({ title, fields, fetchAll, createItem, updateItem
                     name={field.name}
                     value={itemData[field.name] || ''}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                    className={inputStyle}
                     required
                   />
                 </div>
               ))}
-              <div className="flex justify-end gap-4 border-t border-slate-200 pt-4 mt-6">
-                <button type="button" onClick={handleCloseModal} className="rounded-full bg-slate-100 px-5 py-2 font-bold text-slate-700 transition-colors hover:bg-slate-200">Cancelar</button>
-                <button type="submit" className="rounded-full bg-primary px-5 py-2 font-bold text-white transition-colors hover:bg-primary/80">Guardar</button>
+              <div className="flex flex-col sm:flex-row justify-end gap-4 border-t border-slate-200 pt-4 mt-6">
+                <button type="button" onClick={handleCloseModal} className="w-full sm:w-auto rounded-full bg-slate-100 px-5 py-2 font-bold text-slate-700 transition-colors hover:bg-slate-200">Cancelar</button>
+                <button type="submit" className="w-full sm:w-auto rounded-full bg-primary px-5 py-2 font-bold text-white transition-colors hover:bg-primary/80">Guardar</button>
               </div>
             </form>
           </div>

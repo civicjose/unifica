@@ -36,11 +36,12 @@ function EditUserModal({ isOpen, onClose, onUserUpdated, user }) {
     }
   };
 
-  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+  
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200">
           <h3 className="text-2xl font-semibold text-secondary">Editar Usuario</h3>

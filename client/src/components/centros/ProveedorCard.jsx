@@ -14,7 +14,7 @@ const renderDetalles = (detalles, camposDefinicion) => {
       {Object.entries(detalles).map(([key, value]) => (
         <div key={key} className="flex">
           <p className="w-1/3 font-semibold text-slate-500">{labelMap.get(key) || key}:</p>
-          <p className="w-2/3 text-slate-700">{value}</p>
+          <p className="w-2/3 text-slate-700 break-words">{value}</p>
         </div>
       ))}
     </div>
@@ -39,19 +39,19 @@ function ProveedorCard({ proveedorInfo, onEdit, onDelete, onContactClick, campos
 
   return (
     <div className="bg-slate-50/70 rounded-lg p-4 border">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-4 min-w-0">
           <div className="flex-shrink-0 h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
             {getIcon(proveedorInfo.categoria)}
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-primary">{proveedorInfo.categoria}</p>
-            <h4 className="text-lg font-bold text-slate-800">{tituloPrincipal}</h4>
-            {subTitulo && <p className="text-sm text-slate-500">Prov: {subTitulo}</p>}
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase text-primary truncate">{proveedorInfo.categoria}</p>
+            <h4 className="text-lg font-bold text-slate-800 truncate">{tituloPrincipal}</h4>
+            {subTitulo && <p className="text-sm text-slate-500 truncate">Prov: {subTitulo}</p>}
           </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           {user.rol !== 'Usuario' && onEdit && (
             <button onClick={() => onEdit(proveedorInfo)} className="p-2 text-slate-500 hover:text-blue-600" title="Editar"><FiEdit /></button>
           )}
@@ -59,8 +59,7 @@ function ProveedorCard({ proveedorInfo, onEdit, onDelete, onContactClick, campos
             <button onClick={() => onDelete(proveedorInfo)} className="p-2 text-slate-500 hover:text-red-600" title="Desvincular"><FiTrash2 /></button>
           )}
         </div>
-      </div>
-      
+      </div>      
       {Array.isArray(proveedorInfo.aplicacion_contactos) && proveedorInfo.aplicacion_contactos.length > 0 && (
         <div className="mt-3 pt-3 border-t border-slate-200">
            <div className="flex items-start text-sm">

@@ -3,7 +3,6 @@ import toast from 'react-hot-toast';
 import trabajadoresService from '../../services/trabajadoresService';
 import { useAuth } from '../../context/AuthContext';
 
-// 1. Array con los IDs de los puestos que mostrarán el campo Territorio
 const PUESTOS_CON_TERRITORIO = [9, 10, 11];
 
 function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
@@ -25,14 +24,12 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
   const { token } = useAuth();
   const [lugarTrabajoTipo, setLugarTrabajoTipo] = useState('');
 
-  // 2. Lógica de visibilidad
   const showTerritorioField = PUESTOS_CON_TERRITORIO.includes(Number(formData.puesto_id));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     const newFormData = { ...formData, [name]: value };
 
-    // 3. Si se cambia el puesto y no es uno de los que requiere territorio, se limpia el campo
     if (name === 'puesto_id' && !PUESTOS_CON_TERRITORIO.includes(Number(value))) {
       newFormData.territorio_id = '';
     }
@@ -60,12 +57,15 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
     }
   };
 
-  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+  // --- ESTILO CORREGIDO Y UNIFICADO ---
+  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+  const labelStyle = "mb-1 block text-sm font-medium text-slate-600";
+
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200">
           <h3 className="text-2xl font-semibold text-secondary">Añadir Nuevo Trabajador</h3>
@@ -74,33 +74,32 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
         <form onSubmit={handleSubmit} className="mt-4 max-h-[70vh] overflow-y-auto pr-2">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Nombre</label>
+              <label className={labelStyle}>Nombre</label>
               <input name="nombre" value={formData.nombre} onChange={handleChange} className={inputStyle} required />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Apellidos</label>
+              <label className={labelStyle}>Apellidos</label>
               <input name="apellidos" value={formData.apellidos} onChange={handleChange} className={inputStyle} required />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Email</label>
+              <label className={labelStyle}>Email</label>
               <input type="email" name="email" value={formData.email} onChange={handleChange} className={inputStyle} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Teléfono</label>
+              <label className={labelStyle}>Teléfono</label>
               <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} className={inputStyle} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Puesto</label>
+              <label className={labelStyle}>Puesto</label>
               <select name="puesto_id" value={formData.puesto_id} onChange={handleChange} className={inputStyle}>
                 <option value="">-- Seleccionar Puesto --</option>
                 {listas.puestos.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
 
-            {/* 4. Renderizado condicional del campo Territorio */}
             {showTerritorioField && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Territorio (DT)</label>
+                <label className={labelStyle}>Territorio (DT)</label>
                 <select name="territorio_id" value={formData.territorio_id} onChange={handleChange} className={inputStyle}>
                   <option value="">-- Seleccionar Territorio --</option>
                   {listas.territorios?.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -109,7 +108,7 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
             )}
             
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Tipo de Ubicación</label>
+              <label className={labelStyle}>Tipo de Ubicación</label>
               <select name="lugar_trabajo_tipo" value={lugarTrabajoTipo} onChange={handleLugarTipoChange} className={inputStyle}>
                 <option value="">-- Seleccionar Tipo --</option>
                 <option value="sede">Sede</option>
@@ -120,14 +119,14 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
             {lugarTrabajoTipo === 'sede' && (
               <>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Sede (Oficina)</label>
+                  <label className={labelStyle}>Sede (Oficina)</label>
                   <select name="sede_id" value={formData.sede_id} onChange={handleChange} className={inputStyle}>
                     <option value="">-- Seleccionar Sede --</option>
                     {listas.sedes.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Departamento</label>
+                  <label className={labelStyle}>Departamento</label>
                   <select name="departamento_id" value={formData.departamento_id} onChange={handleChange} className={inputStyle}>
                     <option value="">-- Seleccionar Departamento --</option>
                     {listas.departamentos.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
@@ -137,7 +136,7 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
             )}
             {lugarTrabajoTipo === 'centro' && (
               <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium text-slate-600">Centro de Servicio</label>
+                <label className={labelStyle}>Centro de Servicio</label>
                 <select name="centro_id" value={formData.centro_id} onChange={handleChange} className={inputStyle}>
                   <option value="">-- Seleccionar Centro --</option>
                   {listas.centros.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -146,18 +145,18 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
             )}
             
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Estado</label>
+              <label className={labelStyle}>Estado</label>
               <select name="estado" value={formData.estado} onChange={handleChange} className={inputStyle}>
                 <option value="Alta">Alta</option>
                 <option value="Baja">Baja</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Fecha de Alta</label>
+              <label className={labelStyle}>Fecha de Alta</label>
               <input type="date" name="fecha_alta" value={formData.fecha_alta} onChange={handleChange} className={inputStyle} />
             </div>
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-slate-600">Observaciones</label>
+              <label className={labelStyle}>Observaciones</label>
               <textarea name="observaciones" value={formData.observaciones} onChange={handleChange} className={inputStyle} rows="3"></textarea>
             </div>
           </div>

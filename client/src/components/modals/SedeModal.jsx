@@ -23,7 +23,6 @@ function SedeModal({ isOpen, onClose, onSuccess, itemToEdit, listas }) {
   useEffect(() => {
     if (isOpen) {
       if (itemToEdit) {
-        // Si estamos editando, llenamos el formulario con los datos existentes
         setFormData({
           nombre_sede: itemToEdit.nombre_sede || '',
           direccion: itemToEdit.direccion || '',
@@ -36,7 +35,6 @@ function SedeModal({ isOpen, onClose, onSuccess, itemToEdit, listas }) {
           repositorio_fotografico: itemToEdit.repositorio_fotografico || ''
         });
       } else {
-        // Si estamos creando, reseteamos al estado inicial
         setFormData(initialState);
       }
     }
@@ -66,11 +64,11 @@ function SedeModal({ isOpen, onClose, onSuccess, itemToEdit, listas }) {
 
   if (!isOpen) return null;
   
-  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
+  const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
   const labelStyle = "mb-1 block text-sm font-semibold text-slate-600";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
       <div className="w-full max-w-3xl bg-white p-6 rounded-xl shadow-2xl">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200">
           <h3 className="text-2xl font-bold text-secondary">{itemToEdit ? 'Editar' : 'Añadir'} Sede</h3>
