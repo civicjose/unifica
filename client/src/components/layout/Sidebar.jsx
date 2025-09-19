@@ -30,7 +30,7 @@ function Sidebar({ isOpen, setIsOpen }) {
   return (
     <>
       <div 
-        className={`fixed z-30 flex h-screen w-64 flex-col bg-secondary text-white transition-transform duration-300 ease-in-out md:static md:translate-x-0 
+        className={`fixed z-30 flex h-screen w-64 flex-col bg-secondary text-white transition-transform duration-300 ease-in-out md:static md:translate-x-0 md:flex-shrink-0 
                    ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex h-20 items-center justify-center border-b border-white/10">

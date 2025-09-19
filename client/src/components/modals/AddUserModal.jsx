@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import userService from '../../services/userService';
+import apiService from '../../services/apiService';
 import toast from 'react-hot-toast';
 
+const initialState = {
+  nombre_completo: '',
+  email: '',
+  password: '',
+  rol_id: '3',
+};
+
 function AddUserModal({ isOpen, onClose, onUserAdded }) {
-  const [formData, setFormData] = useState({
-    nombre_completo: '',
-    email: '',
-    password: '',
-    rol_id: '3',
-  });
+  const [formData, setFormData] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const { token } = useAuth();
 
@@ -21,8 +23,9 @@ function AddUserModal({ isOpen, onClose, onUserAdded }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await userService.createUser(formData, token);
+      await apiService.createUser(formData, token);
       toast.success('¡Usuario creado con éxito!');
+      setFormData(initialState);
       onUserAdded();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error al crear el usuario.');

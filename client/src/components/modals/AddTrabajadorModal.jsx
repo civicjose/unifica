@@ -1,25 +1,27 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import trabajadoresService from '../../services/trabajadoresService';
+import apiService from '../../services/apiService';
 import { useAuth } from '../../context/AuthContext';
 
 const PUESTOS_CON_TERRITORIO = [9, 10, 11];
 
+const initialState = {
+  nombre: '',
+  apellidos: '',
+  email: '',
+  telefono: '',
+  puesto_id: '',
+  territorio_id: '',
+  sede_id: '',
+  centro_id: '',
+  departamento_id: '',
+  estado: 'Alta',
+  fecha_alta: new Date().toISOString().split('T')[0],
+  observaciones: '',
+};
+
 function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
-  const [formData, setFormData] = useState({
-    nombre: '',
-    apellidos: '',
-    email: '',
-    telefono: '',
-    puesto_id: '',
-    territorio_id: '',
-    sede_id: '',
-    centro_id: '',
-    departamento_id: '',
-    estado: 'Alta',
-    fecha_alta: new Date().toISOString().split('T')[0],
-    observaciones: '',
-  });
+  const [formData, setFormData] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const { token } = useAuth();
   const [lugarTrabajoTipo, setLugarTrabajoTipo] = useState('');
@@ -47,8 +49,10 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await trabajadoresService.createTrabajador(formData, token);
+      await apiService.createTrabajador(formData, token);
       toast.success('Trabajador añadido con éxito.');
+      setFormData(initialState);
+      setLugarTrabajoTipo('');
       onTrabajadorAdded();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al añadir el trabajador.');
@@ -57,7 +61,6 @@ function AddTrabajadorModal({ isOpen, onClose, onTrabajadorAdded, listas }) {
     }
   };
 
-  // --- ESTILO CORREGIDO Y UNIFICADO ---
   const inputStyle = "w-full rounded-lg border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition";
   const labelStyle = "mb-1 block text-sm font-medium text-slate-600";
 

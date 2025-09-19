@@ -5,7 +5,8 @@ import {
   createTrabajador, 
   updateTrabajador, 
   deleteTrabajador, 
-  importTrabajadores
+  importTrabajadores,
+  getGastosByTrabajador
 } from '../controllers/trabajadoresController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
@@ -21,6 +22,9 @@ router.route('/:id')
   .put(protect, authorize('Administrador', 'Técnico'), updateTrabajador)
   .delete(protect, authorize('Administrador'), deleteTrabajador);
 
+router.route('/:id/gastos')
+  .get(protect, getGastosByTrabajador);
+
 
 router.post(
   '/import', 
@@ -29,5 +33,6 @@ router.post(
   upload.single('file'),
   importTrabajadores
 );
+
 
 export default router;

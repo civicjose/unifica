@@ -11,6 +11,7 @@ import CentroModal from '../components/modals/CentroModal';
 import ContactoDetailModal from '../components/modals/ContactoDetailModal';
 import TrabajadoresList from '../components/sedes/TrabajadoresList';
 import TrabajadorDetailModal from '../components/modals/TrabajadorDetailModal';
+import GastosTab from '../components/gastos/GastosTab';
 
 const InfoBlock = ({ title, children, onEdit }) => (
   <div className="bg-white p-6 rounded-xl border shadow-sm h-full">
@@ -121,7 +122,7 @@ function CentroDetailPage() {
     return `${baseUrl}?${params.toString()}`;
   };
 
-  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg focus:outline-none transition-colors";
+  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg focus:outline-none transition-colors flex-shrink-0";
   const activeTabStyle = "bg-white text-primary border-b-2 border-primary";
   const inactiveTabStyle = "text-slate-500 hover:bg-slate-200/50";
 
@@ -178,14 +179,19 @@ function CentroDetailPage() {
           </div>
           <div className="lg:col-span-2">
             <div className="border-b border-slate-300">
-                <nav className="flex flex-wrap -mb-px">
-                  <button onClick={() => setActiveTab('proveedores')} className={`${tabStyle} ${activeTab === 'proveedores' ? activeTabStyle : inactiveTabStyle}`}>
-                    Proveedores
-                  </button>
-                  <button onClick={() => setActiveTab('trabajadores')} className={`${tabStyle} ${activeTab === 'trabajadores' ? activeTabStyle : inactiveTabStyle}`}>
-                    Trabajadores
-                  </button>
-                </nav>
+                <div className="overflow-x-auto no-scrollbar">
+                    <nav className="flex -mb-px">
+                        <button onClick={() => setActiveTab('proveedores')} className={`${tabStyle} ${activeTab === 'proveedores' ? activeTabStyle : inactiveTabStyle}`}>
+                            Proveedores
+                        </button>
+                        <button onClick={() => setActiveTab('trabajadores')} className={`${tabStyle} ${activeTab === 'trabajadores' ? activeTabStyle : inactiveTabStyle}`}>
+                            Trabajadores
+                        </button>
+                        <button onClick={() => setActiveTab('gastos')} className={`${tabStyle} ${activeTab === 'gastos' ? activeTabStyle : inactiveTabStyle}`}>
+                            Gastos
+                        </button>
+                    </nav>
+                </div>
               </div>
               <div className="bg-white p-4 sm:p-6 rounded-b-xl border-x border-b shadow-sm">
                 {activeTab === 'proveedores' && (
@@ -218,6 +224,9 @@ function CentroDetailPage() {
                 )}
                 {activeTab === 'trabajadores' && (
                   <TrabajadoresList trabajadores={trabajadores} onWorkerClick={handleWorkerClick} />
+                )}
+                {activeTab === 'gastos' && (
+                  <GastosTab centroId={id} />
                 )}
               </div>
           </div>

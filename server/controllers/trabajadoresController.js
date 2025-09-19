@@ -1,7 +1,6 @@
 import pool from '../config/database.js';
 import Papa from 'papaparse';
 
-// Función auxiliar para normalizar fechas, crucial para la comparación en el historial
 const normalizeDate = (date) => {
     if (!date) return null;
     const d = new Date(date);
@@ -37,7 +36,6 @@ const getAllTrabajadores = async (req, res) => {
   const whereClauses = [];
   const queryParams = [];
 
-  // --- LÓGICA DE BÚSQUEDA CORREGIDA ---
   if (search) {
     const searchTerms = search.split(' ').filter(term => term.length > 0);
     searchTerms.forEach(term => {
@@ -51,7 +49,6 @@ const getAllTrabajadores = async (req, res) => {
           ter.codigo LIKE ?
         )`
       );
-      // Añade el parámetro para cada '?' en la cláusula
       queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     });
   }
@@ -111,6 +108,13 @@ const createTrabajador = async (req, res) => {
   const conn = await pool.getConnection();
 
   try {
+    if (datosNuevos.email) {
+        const [trabajadorExistente] = await conn.query('SELECT id FROM trabajadores WHERE email = ?', [datosNuevos.email]);
+        if (trabajadorExistente.length > 0) {
+            return res.status(400).json({ message: 'Ya existe un trabajador con ese correo electrónico.' });
+        }
+    }
+
     await conn.beginTransaction();
     
     const { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, territorio_id, estado, fecha_alta, observaciones } = datosNuevos;
@@ -162,10 +166,8 @@ const updateTrabajador = async (req, res) => {
     }
     const datosAnteriores = trabajadoresActuales[0];
 
-    // --- CORRECCIÓN 1: Se cambia 'const' por 'let' para permitir la modificación ---
     let { nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, territorio_id, estado, fecha_alta, fecha_baja, observaciones } = datosNuevos;
     
-    // --- CORRECCIÓN 2: Esta lógica se ejecuta ANTES de la consulta UPDATE ---
     if (estado === 'Alta') {
       fecha_baja = null;
     }
@@ -185,7 +187,6 @@ const updateTrabajador = async (req, res) => {
       let valorAnteriorComparable = valorAnterior ?? null;
       let valorNuevoComparable = valorNuevo ?? null;
 
-      // Se normalizan las fechas para una comparación precisa en el historial
       if (campo === 'fecha_alta' || campo === 'fecha_baja') {
         valorAnteriorComparable = normalizeDate(valorAnterior);
         valorNuevoComparable = normalizeDate(valorNuevo);
@@ -229,29 +230,22 @@ const importTrabajadores = async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
     }
-
     const fileContent = req.file.buffer.toString('utf-8');
     const conn = await pool.getConnection();
-
     try {
         const results = Papa.parse(fileContent, {
             header: true,
             skipEmptyLines: true,
             transformHeader: (header) => header.trim().replace(/^\uFEFF/, ''),
-            delimiter: ";", // Asegúrate de que tu CSV usa comas
+            delimiter: ";",
         });
         
-        // Error mejorado y coherente con el delimitador usado.
         if (results.errors.some(e => e.code === 'MissingHeader' || results.data.length === 0)) {
             throw new Error('El delimitador del CSV parece incorrecto o el archivo está mal formado. Por favor, revisa que las columnas estén separadas por comas (,).');
         }
-
         await conn.beginTransaction();
-
         for (const [index, row] of results.data.entries()) {
-            const rowNumber = index + 2; // +2 para contar la cabecera
-
-            // 1. Validar y obtener el puesto_id
+            const rowNumber = index + 2;
             if (!row.puesto || row.puesto.trim() === '') {
                 throw new Error(`El campo 'puesto' está vacío en la fila ${rowNumber}.`);
             }
@@ -260,8 +254,6 @@ const importTrabajadores = async (req, res) => {
                 throw new Error(`El puesto '${row.puesto}' no existe en la base de datos. Fila ${rowNumber} del CSV.`);
             }
             const puesto_id = puesto[0].id;
-
-            // 2. Validar y obtener sede_id o centro_id
             let sede_id = null;
             let centro_id = null;
             if (row.ubicacion && row.ubicacion.trim() !== '') {
@@ -274,15 +266,10 @@ const importTrabajadores = async (req, res) => {
                     if (centro.length > 0) {
                         centro_id = centro[0].id;
                     } else {
-                        // Opcional: podrías decidir no lanzar un error y simplemente dejar la ubicación en null con un warning.
-                        // Por ahora, mantenemos la validación estricta.
                         throw new Error(`La ubicación '${ubicacion}' no existe como Sede ni como Centro. Fila ${rowNumber} del CSV.`);
                     }
                 }
             }
-
-            // 3. Validar y obtener departamento_id (LÓGICA CORREGIDA)
-            // Se busca el departamento si existe en el CSV, sin depender de si hay una sede.
             let departamento_id = null;
             if (row.departamento && row.departamento.trim() !== '') {
                 const departamento = row.departamento.trim();
@@ -293,15 +280,7 @@ const importTrabajadores = async (req, res) => {
                 departamento_id = depto[0].id;
             }
             
-            // 4. Lógica de Inserción o Actualización (UPSERT)
-            // Si el email ya existe, actualiza el registro. Si no, lo inserta.
-            // Esto evita errores de clave única 'email'.
             const email = row.email && row.email.trim() !== '' ? row.email.trim() : null;
-            if (!email) {
-                // Si se requiere email, se puede lanzar un error. Si no, se puede insertar sin él.
-                // Asumimos que un trabajador puede no tener email por ahora.
-            }
-
             const values = {
                 nombre: row.nombre,
                 apellidos: row.apellidos,
@@ -316,9 +295,6 @@ const importTrabajadores = async (req, res) => {
                 fecha_baja: row.fecha_baja || null,
                 observaciones: row.observaciones || null
             };
-
-            // Se usa INSERT ... ON DUPLICATE KEY UPDATE para manejar emails existentes.
-            // El email debe ser una clave UNIQUE en tu tabla para que esto funcione.
             await conn.query(
               `INSERT INTO trabajadores (nombre, apellidos, email, telefono, puesto_id, sede_id, centro_id, departamento_id, estado, fecha_alta, fecha_baja, observaciones) 
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -329,15 +305,11 @@ const importTrabajadores = async (req, res) => {
               [...Object.values(values)]
             );
         }
-
         await conn.commit();
         res.json({ message: `${results.data.length} trabajadores importados o actualizados con éxito.` });
-
     } catch (error) {
         await conn.rollback();
-        // Es buena práctica loguear el error completo en el servidor.
         console.error('Error durante la importación de trabajadores:', error);
-        // Y enviar un mensaje claro al cliente.
         res.status(400).json({ message: error.message || 'Error en la importación. Ningún dato fue guardado.' });
     } finally {
         if (conn) conn.release();
@@ -346,7 +318,7 @@ const importTrabajadores = async (req, res) => {
 
 const getDirectoresDeCentro = async (req, res) => {
   try {
-    const puestoIdDirector = 12; // ID del puesto "Director/a de Centro"
+    const puestoIdDirector = 12;
     const [directores] = await pool.query(
       'SELECT id, nombre, apellidos FROM trabajadores WHERE puesto_id = ? AND estado = "Alta" ORDER BY apellidos, nombre',
       [puestoIdDirector]
@@ -354,6 +326,30 @@ const getDirectoresDeCentro = async (req, res) => {
     res.json(directores);
   } catch (error) {
     res.status(500).json({ message: 'Error del servidor al obtener los directores.' });
+  }
+};
+
+export const getGastosByTrabajador = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT 
+        g.id,
+        g.concepto,
+        g.importe,
+        DATE_FORMAT(g.fecha, '%Y-%m-%d') as fecha,
+        COALESCE(c.nombre_centro, s.nombre_sede) as ubicacion_gasto
+      FROM gastos g
+      LEFT JOIN centros c ON g.centro_id = c.id
+      LEFT JOIN sedes s ON g.sede_id = s.id
+      WHERE g.trabajador_id = ?
+      ORDER BY g.fecha DESC;
+    `;
+    const [gastos] = await pool.query(query, [id]);
+    res.json(gastos);
+  } catch (error) {
+    console.error("Error al obtener los gastos del trabajador:", error);
+    res.status(500).json({ message: 'Error del servidor.' });
   }
 };
 

@@ -13,7 +13,6 @@ const InfoBlock = ({ title, children, onEdit }) => (
     <div className="bg-white p-6 rounded-xl border shadow-sm h-full">
         <div className="flex justify-between items-center border-b pb-2 mb-4">
             <h3 className="text-lg font-bold text-secondary">{title}</h3>
-            {/* --- CONTROL DE ROL: El botón de editar solo se muestra si onEdit existe --- */}
             {onEdit && <button onClick={onEdit} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Información"><FiEdit /></button>}
         </div>
         <div className="space-y-4">{children}</div>
@@ -29,7 +28,7 @@ const DetailRow = ({ label, children }) => (
 
 function ProveedorDetailPage() {
   const { id } = useParams();
-  const { token, user } = useAuth(); // Obtenemos el usuario
+  const { token, user } = useAuth();
   const [proveedor, setProveedor] = useState(null);
   const [contactos, setContactos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,16 +79,16 @@ function ProveedorDetailPage() {
   if (loading) return <p className="text-center p-8">Cargando proveedor...</p>;
   if (!proveedor) return <p className="text-center p-8">No se encontró el proveedor.</p>;
   
-  const tabStyle = "px-4 py-2 font-semibold transition-colors rounded-t-lg";
-  const activeTabStyle = "bg-white text-primary";
-  const inactiveTabStyle = "bg-transparent text-slate-500 hover:bg-slate-100";
+  const tabStyle = "px-4 py-2 font-semibold rounded-t-lg focus:outline-none transition-colors flex-shrink-0";
+  const activeTabStyle = "bg-white text-primary border-b-2 border-primary";
+  const inactiveTabStyle = "text-slate-500 hover:bg-slate-200/50";
 
   return (
     <>
       <div className="space-y-6">
         <Link to="/proveedores" className="flex items-center gap-2 text-primary font-semibold hover:underline"><FiArrowLeft /> Volver</Link>
         <h1 className="text-4xl font-bold text-gray-800">{proveedor.nombre_proveedor}</h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           <div className="md:col-span-1 space-y-6">
             <InfoBlock 
               title="Información General" 
@@ -103,13 +102,15 @@ function ProveedorDetailPage() {
           </div>
           <div className="md:col-span-2">
             <div className="border-b border-slate-300">
-              <nav className="flex space-x-2">
-                <button onClick={() => setActiveTab('contactos')} className={`${tabStyle} ${activeTab === 'contactos' ? activeTabStyle : inactiveTabStyle}`}>Contactos</button>
-                <button onClick={() => setActiveTab('aplicaciones')} className={`${tabStyle} ${activeTab === 'aplicaciones' ? activeTabStyle : inactiveTabStyle}`}>Aplicaciones</button>
-                <button onClick={() => setActiveTab('vinculos')} className={`${tabStyle} ${activeTab === 'vinculos' ? activeTabStyle : inactiveTabStyle}`}>Vinculado en</button>
-              </nav>
+              <div className="overflow-x-auto no-scrollbar">
+                <nav className="flex -mb-px">
+                  <button onClick={() => setActiveTab('contactos')} className={`${tabStyle} ${activeTab === 'contactos' ? activeTabStyle : inactiveTabStyle}`}>Contactos</button>
+                  <button onClick={() => setActiveTab('aplicaciones')} className={`${tabStyle} ${activeTab === 'aplicaciones' ? activeTabStyle : inactiveTabStyle}`}>Aplicaciones</button>
+                  <button onClick={() => setActiveTab('vinculos')} className={`${tabStyle} ${activeTab === 'vinculos' ? activeTabStyle : inactiveTabStyle}`}>Vinculado en</button>
+                </nav>
+              </div>
             </div>
-            <div className="mt-4 bg-white p-6 rounded-xl border shadow-sm min-h-[300px]">
+            <div className="bg-white p-6 rounded-b-xl border-x border-b shadow-sm min-h-[300px]">
               {renderTabContent()}
             </div>
           </div>

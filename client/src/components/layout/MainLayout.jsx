@@ -12,7 +12,8 @@ function MainLayout() {
     <div className="flex h-screen overflow-hidden bg-slate-100">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       
-      <div className="flex flex-col flex-grow overflow-y-auto">
+      <div className="flex flex-col flex-grow overflow-y-auto overflow-x-hidden">
+        
         <main className="flex-grow p-4 md:p-8">
           <button 
             onClick={() => setIsSidebarOpen(true)}

@@ -1,8 +1,8 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = 'http://localhost:4000/api';
-//const API_URL = '/api';
+//const API_URL = 'http://localhost:4000/api';
+const API_URL = '/api';
 
 let isHandlingSessionExpiration = false;
 
@@ -21,8 +21,11 @@ export const setupAxiosInterceptors = (logout) => {
 };
 
 
-const getConfig = (token) => ({
-  headers: { Authorization: `Bearer ${token}` },
+const getConfig = (token, isFormData = false) => ({
+  headers: { 
+    Authorization: `Bearer ${token}`,
+    'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
+  },
 });
 
 // --- Auth & Users ---
@@ -55,12 +58,11 @@ const deleteTrabajador = (id, token) => axios.delete(`${API_URL}/trabajadores/${
 const importTrabajadores = (file, token) => {
   const formData = new FormData();
   formData.append('file', file);
-  const config = { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` } };
-  return axios.post(`${API_URL}/trabajadores/import`, formData, config);
+  return axios.post(`${API_URL}/trabajadores/import`, formData, getConfig(token, true));
 };
 const getTrabajadoresBySede = (id, token) => axios.get(`${API_URL}/sedes/${id}/trabajadores`, getConfig(token));
 const getTrabajadoresByCentro = (id, token) => axios.get(`${API_URL}/centros/${id}/trabajadores`, getConfig(token));
-
+const getGastosByTrabajador = (trabajadorId, token) => axios.get(`${API_URL}/trabajadores/${trabajadorId}/gastos`, getConfig(token));
 
 // --- Listas ---
 const getPuestos = (token) => axios.get(`${API_URL}/puestos`, getConfig(token));
@@ -139,6 +141,13 @@ const getDashboardStats = (token) => axios.get(`${API_URL}/dashboard/stats`, get
 // --- Búsqueda ---
 const globalSearch = (term, token) => axios.get(`${API_URL}/search/global`, { ...getConfig(token), params: { term } });
 
+// --- Gastos ---
+const getGastos = (params, token) => axios.get(`${API_URL}/gastos`, { ...getConfig(token), params });
+const createGasto = (data, token) => axios.post(`${API_URL}/gastos`, data, getConfig(token, true));
+const updateGasto = (id, data, token) => axios.put(`${API_URL}/gastos/${id}`, data, getConfig(token, true));
+const deleteGasto = (id, token) => axios.delete(`${API_URL}/gastos/${id}`, getConfig(token));
+const exportGastos = (params, token) => axios.get(`${API_URL}/gastos/export`, { ...getConfig(token), params, responseType: 'blob' });
+
 const apiService = {
   // Auth & Users
   createUser,
@@ -153,6 +162,7 @@ const apiService = {
   importTrabajadores,
   getTrabajadoresBySede,
   getTrabajadoresByCentro,
+  getGastosByTrabajador,
   // Listas
   getPuestos,
   getSedes,
@@ -220,6 +230,12 @@ const apiService = {
   getDashboardStats,
   // Búsqueda
   globalSearch,
+  // Gastos
+  getGastos,
+  createGasto,
+  updateGasto,
+  deleteGasto,
+  exportGastos,
 };
 
 export default apiService;

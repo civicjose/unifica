@@ -1,29 +1,38 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import apiService from '../../services/apiService';
-import { FiPlus, FiEdit2, FiTrash2, FiUser, FiBriefcase, FiMail, FiPhone, FiFileText } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiFileText } from 'react-icons/fi';
 import ContactoModal from '../modals/ContactoModal';
 import ConfirmModal from '../modals/ConfirmModal';
 
-// Sub-componente para la Tarjeta de Contacto individual
 const ContactoCard = ({ contacto, onEdit, onDelete }) => {
-const { user } = useAuth();
+  const { user } = useAuth();
   return (
-    <div className="bg-slate-50/70 rounded-lg p-4 border relative">
-      <div className="flex items-center gap-4">
-        <div className="flex-shrink-0 h-12 w-12 rounded-full bg-secondary text-white flex items-center justify-center">
-          <FiUser className="h-6 w-6" />
+    <div className="bg-slate-50/70 rounded-lg p-4 border">
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="flex-shrink-0 h-12 w-12 rounded-full bg-secondary text-white flex items-center justify-center">
+            <FiUser className="h-6 w-6" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold text-slate-800 text-lg truncate">{contacto.nombre}</p>
+            <p className="text-sm text-primary font-semibold truncate">{contacto.cargo || 'Cargo no especificado'}</p>
+          </div>
         </div>
-        <div>
-          <p className="font-bold text-slate-800 text-lg">{contacto.nombre}</p>
-          <p className="text-sm text-primary font-semibold">{contacto.cargo || 'Cargo no especificado'}</p>
+        <div className="flex flex-shrink-0 gap-1">
+         {['Administrador', 'Técnico'].includes(user.rol) && (
+            <button onClick={() => onEdit(contacto)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Contacto"><FiEdit2 size={16}/></button>
+          )}
+          {user.rol === 'Administrador' && (
+            <button onClick={() => onDelete(contacto)} className="p-2 text-red-600 hover:bg-red-100 rounded-full" title="Eliminar Contacto"><FiTrash2 size={16}/></button>
+          )}
         </div>
       </div>
       <div className="mt-4 pt-4 border-t border-slate-200 space-y-2 text-sm">
         <div className="flex items-center text-slate-600">
           <FiMail className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span>{contacto.email || '-'}</span>
+          <span className="break-all">{contacto.email || '-'}</span>
         </div>
         <div className="flex items-center text-slate-600">
           <FiPhone className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -36,19 +45,10 @@ const { user } = useAuth();
           </div>
         )}
       </div>
-      <div className="absolute top-2 right-2 flex gap-1">
-       {['Administrador', 'Técnico'].includes(user.rol) && (
-          <button onClick={() => onEdit(contacto)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full" title="Editar Contacto"><FiEdit2 size={16}/></button>
-        )}
-        {user.rol === 'Administrador' && (
-          <button onClick={() => onDelete(contacto)} className="p-2 text-red-600 hover:bg-red-100 rounded-full" title="Eliminar Contacto"><FiTrash2 size={16}/></button>
-        )}
-      </div>
     </div>
   );
 };
 
-// Componente principal de la pestaña
 function ProveedorContactos({ proveedorId, contactos, onUpdate }) {
   const { token, user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -80,7 +80,7 @@ function ProveedorContactos({ proveedorId, contactos, onUpdate }) {
       loading: 'Eliminando...',
       success: () => {
         setItemToDelete(null);
-        onUpdate(); // <-- Y aquí también
+        onUpdate();
         return 'Contacto eliminado.';
       },
       error: (err) => err.response?.data?.message || 'Error al eliminar.',
